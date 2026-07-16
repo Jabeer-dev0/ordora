@@ -11,6 +11,8 @@
     "dev:admin": "cd admin && npm run dev",
     "dev": "concurrently \"npm run dev:app\" \"npm run dev:admin\"",
     "build": "cd app && npm run build && cd ../admin && npm run build",
+    "vercel-build:app": "npx prisma generate && cd app && npm run build",
+    "vercel-build:admin": "npx prisma generate && cd admin && npm run build",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
