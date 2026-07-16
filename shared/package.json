@@ -1,0 +1,10 @@
+{
+  "name": "ordora-shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./lib/index.ts",
+  "types": "./lib/index.ts",
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}
