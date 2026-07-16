@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #16a34a;
+  --brand-rgb: 22 163 74;
+  --accent: #1e293b;
+  --accent-rgb: 30 41 59;
+  --surface: #ffffff;
+  --paper: #f8fafc;
+  --paper-2: #f1f5f9;
+  --ink: #0f172a;
+  --ink-fg: #64748b;
+  --gold: #d97706;
+  --line: #e2e8f0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+.brand-bg { background-color: var(--brand); }
+.brand-text { color: var(--brand); }
+.brand-border { border-color: var(--brand); }
+.accent-bg { background-color: var(--accent); }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

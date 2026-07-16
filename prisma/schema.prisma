@@ -27,9 +27,19 @@ model Store {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name      String
+  slug      String   @unique @default("main-store")
   address   String?
   phone     String?
+  postcode  String?
+  timezone  String   @default("Europe/London")
   isActive  Boolean  @default(true)
+
+  acceptingOrders Boolean  @default(true)
+  closedUntil     DateTime?
+
+  webServiceCharge Int @default(0)
+  bagCharge        Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,8 +47,37 @@ model Store {
   orders          Order[]
   staff           Staff[]
   modifierGroups  ModifierGroup[]
+  banners         Banner[]
+  openingHours    StoreOpeningHour[]
 
   @@index([tenantId])
+  @@index([slug])
+}
+
+model StoreOpeningHour {
+  id        String  @id @default(cuid())
+  storeId   String
+  store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderType String  @default("STORE")
+  day       Int
+  open      String
+  close     String
+  isActive  Boolean @default(true)
+
+  @@unique([storeId, orderType, day])
+}
+
+model Banner {
+  id        String  @id @default(cuid())
+  storeId   String
+  store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  title     String
+  subtitle  String?
+  imageUrl  String?
+  ctaLabel  String?
+  ctaUrl    String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
 }
 
 model User {
@@ -68,6 +107,9 @@ model MenuItem {
   category    String
   imageUrl    String?
   isAvailable Boolean  @default(true)
+  soldOut     Boolean  @default(false)
+  allergens   String   @default("")
+  isFeatured  Boolean  @default(false)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -127,6 +169,9 @@ model Order {
   store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   userId        String?
   user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName  String?
+  customerPhone String?
+  customerEmail String?
   status        String   @default("PENDING")
   source        String   @default("TILL")
   orderType     String   @default("DINE_IN")

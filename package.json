@@ -4,15 +4,18 @@
   "workspaces": [
     "shared",
     "app",
-    "admin"
+    "admin",
+    "storefront"
   ],
   "scripts": {
     "dev:app": "cd app && npm run dev",
     "dev:admin": "cd admin && npm run dev",
-    "dev": "concurrently \"npm run dev:app\" \"npm run dev:admin\"",
+    "dev:storefront": "cd storefront && npm run dev",
+    "dev": "concurrently \"npm run dev:app\" \"npm run dev:admin\" \"npm run dev:storefront\"",
     "build": "cd app && npm run build && cd ../admin && npm run build",
     "vercel-build:app": "npx prisma generate && cd app && npm run build",
     "vercel-build:admin": "npx prisma generate && cd admin && npm run build",
+    "vercel-build:storefront": "npx prisma generate && cd storefront && npm run build",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",

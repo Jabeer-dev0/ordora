@@ -3,10 +3,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 .vercel/
+.env.local
 
 # env files (contain secrets)
 .env
-.env.local
 .env.*.local
 
 # SQLite (local dev only)
@@ -14,3 +14,4 @@ prisma/dev.db
 prisma/dev.db-journal
 
 .vercel
+.env*
