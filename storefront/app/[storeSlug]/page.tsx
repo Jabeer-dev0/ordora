@@ -1,7 +1,10 @@
 import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Phone, MapPin, Clock, ShoppingBag, Star, Navigation } from "lucide-react"
+import { Phone, MapPin, Clock, ShoppingBag, Navigation } from "lucide-react"
+import { getStoreBySlug } from "@/lib/store"
+
+export const revalidate = 60
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
@@ -21,24 +24,21 @@ function getOpenStatus(hours: { day: number; open: string; close: string; isActi
 
 export default async function StorePage({ params }: { params: Promise<{ storeSlug: string }> }) {
   const { storeSlug } = await params
-  const store = await prisma.store.findUnique({
-    where: { slug: storeSlug },
-    include: {
-      tenant: true,
-      banners: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-      openingHours: { orderBy: { day: "asc" } },
-      menuItems: { where: { isAvailable: true, soldOut: false, isFeatured: true }, take: 6, orderBy: { sortOrder: "asc" } },
-    },
-  })
+  const store = await getStoreBySlug(storeSlug)
   if (!store || !store.isActive) notFound()
 
-  const hours = getOpenStatus(store.openingHours as any)
-  const collectionHours = store.openingHours.filter((h: any) => h.orderType === "COLLECTION")
-  const deliveryHours = store.openingHours.filter((h: any) => h.orderType === "DELIVERY")
+  const [banners, openingHours, menuItems] = await Promise.all([
+    prisma.banner.findMany({ where: { storeId: store.id, isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.storeOpeningHour.findMany({ where: { storeId: store.id }, orderBy: { day: "asc" } }),
+    prisma.menuItem.findMany({ where: { storeId: store.id, isAvailable: true, soldOut: false, isFeatured: true }, take: 6, orderBy: { sortOrder: "asc" } }),
+  ])
+
+  const hours = getOpenStatus(openingHours as any)
+  const collectionHours = openingHours.filter((h: any) => h.orderType === "COLLECTION")
+  const deliveryHours = openingHours.filter((h: any) => h.orderType === "DELIVERY")
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href={`/${storeSlug}`} className="font-display text-lg tracking-tight text-foreground">{store.name}</Link>
@@ -60,12 +60,11 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16">
-        {/* Deals / Popular Section */}
         <section className="pt-6 pb-4">
           <h2 className="mb-4 font-display text-2xl tracking-tight text-foreground">Popular right now</h2>
-          {store.menuItems.length > 0 ? (
+          {menuItems.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-              {store.menuItems.map((item, i) => (
+              {menuItems.map((item, i) => (
                 <Link key={item.id} href={`/${storeSlug}/menu`}
                   className="group rounded-card bg-card border border-border p-3 shadow-card lift">
                   <div className="relative mb-2">
@@ -90,7 +89,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
           )}
         </section>
 
-        {/* Find Us */}
         <section className="rounded-card-lg bg-card border border-border shadow-card overflow-hidden">
           <div className="p-6 sm:p-8">
             <h2 className="mb-1 font-display text-xl tracking-tight text-foreground">Find us</h2>
@@ -127,14 +125,13 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
             </div>
           </div>
 
-          {/* Opening Hours */}
           <div className="border-t border-border bg-muted/40 p-6 sm:p-8">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
               <Clock className="h-4 w-4 text-muted-foreground" /> Opening hours
             </h3>
             <div className="space-y-1.5 text-sm">
               {DAYS.map((day, i) => {
-                const h = store.openingHours.find((o: any) => o.day === i)
+                const h = openingHours.find((o: any) => o.day === i)
                 const isToday = new Date().getDay() === i
                 return (
                   <div key={day} className={`flex items-center justify-between py-1 ${isToday ? "font-bold" : "text-muted-foreground"}`}>
@@ -148,7 +145,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                 )
               })}
             </div>
-            {/* Collection/Delivery hours */}
             <div className="mt-4 flex gap-2">
               {collectionHours.length > 0 && (
                 <span className="rounded-full bg-card border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground">collection</span>
@@ -160,7 +156,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
           </div>
         </section>
 
-        {/* CTA */}
         <div className="mt-6 text-center">
           <Link href={`/${storeSlug}/menu`}
             className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-lg shadow-primary/20">
@@ -169,7 +164,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border bg-card">
         <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">

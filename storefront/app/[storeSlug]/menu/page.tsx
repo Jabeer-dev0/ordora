@@ -1,8 +1,9 @@
 import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import MenuClient from "./menu-client"
+import { getStoreBySlug } from "@/lib/store"
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+export const revalidate = 30
 
 function getOpenStatus(hours: { day: number; open: string; close: string; isActive: boolean; orderType?: string }[], orderType?: string) {
   const now = new Date()
@@ -29,18 +30,17 @@ function formatHoursForType(hours: { day: number; open: string; close: string; i
 
 export default async function MenuPage({ params }: { params: Promise<{ storeSlug: string }> }) {
   const { storeSlug } = await params
-  const store = await prisma.store.findUnique({
-    where: { slug: storeSlug },
-    include: {
-      tenant: true,
-      menuItems: { where: { isAvailable: true }, orderBy: [{ category: "asc" }, { sortOrder: "asc" }] },
-      modifierGroups: { include: { items: { where: { isAvailable: true }, orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
-      openingHours: { orderBy: { day: "asc" } },
-    },
-  })
+  const store = await getStoreBySlug(storeSlug)
   if (!store || !store.isActive) notFound()
 
-  const menuItems = store.menuItems.map(item => ({
+  const [menuItemsRaw, modifierGroupsRaw, itemModGroups, openingHours] = await Promise.all([
+    prisma.menuItem.findMany({ where: { storeId: store.id, isAvailable: true }, orderBy: [{ category: "asc" }, { sortOrder: "asc" }] }),
+    prisma.modifierGroup.findMany({ where: { storeId: store.id }, include: { items: { where: { isAvailable: true }, orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } }),
+    prisma.menuItemModifierGroup.findMany({ where: { menuItem: { storeId: store.id } } }),
+    prisma.storeOpeningHour.findMany({ where: { storeId: store.id }, orderBy: { day: "asc" } }),
+  ])
+
+  const menuItems = menuItemsRaw.map(item => ({
     id: item.id,
     name: item.name,
     description: item.description || "",
@@ -54,7 +54,7 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
 
   const categories = [...new Set(menuItems.map(i => i.category))]
 
-  const modifierGroups = store.modifierGroups.map(mg => ({
+  const modifierGroups = modifierGroupsRaw.map(mg => ({
     id: mg.id,
     name: mg.name,
     required: mg.required,
@@ -64,18 +64,13 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
   }))
 
   const itemModLinks: Record<string, string[]> = {}
-  const itemModGroups = await prisma.menuItemModifierGroup.findMany({
-    where: { menuItemId: { in: menuItems.map(i => i.id) } },
-  })
   for (const link of itemModGroups) {
     if (!itemModLinks[link.menuItemId]) itemModLinks[link.menuItemId] = []
     itemModLinks[link.menuItemId].push(link.modifierGroupId)
   }
 
-  const openingHours = store.openingHours as { day: number; open: string; close: string; isActive: boolean; orderType: string }[]
-  const overallStatus = getOpenStatus(openingHours)
-  const collectionStatus = getOpenStatus(openingHours, "COLLECTION")
-  const deliveryStatus = getOpenStatus(openingHours, "DELIVERY")
+  const hours = openingHours as { day: number; open: string; close: string; isActive: boolean; orderType: string }[]
+  const overallStatus = getOpenStatus(hours)
 
   const storeData = {
     id: store.id,
@@ -94,8 +89,8 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
     hoursUntil: overallStatus.until,
     address: store.address || "",
     phone: store.phone || "",
-    collectionHours: formatHoursForType(openingHours, "COLLECTION"),
-    deliveryHours: formatHoursForType(openingHours, "DELIVERY"),
+    collectionHours: formatHoursForType(hours, "COLLECTION"),
+    deliveryHours: formatHoursForType(hours, "DELIVERY"),
   }
 
   return (

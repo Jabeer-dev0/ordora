@@ -1,13 +1,15 @@
-import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import { getStoreBySlug } from "@/lib/store"
 import "../globals.css"
+
+export const revalidate = 60
 
 type Props = { params: Promise<{ storeSlug: string }>; children: React.ReactNode }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { storeSlug } = await params
-  const store = await prisma.store.findUnique({ where: { slug: storeSlug }, include: { tenant: true } })
+  const store = await getStoreBySlug(storeSlug)
   if (!store) return { title: "Store not found" }
   return {
     title: `${store.name} | Order online`,
@@ -17,10 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function StoreLayout({ params, children }: Props) {
   const { storeSlug } = await params
-  const store = await prisma.store.findUnique({
-    where: { slug: storeSlug },
-    include: { tenant: true },
-  })
+  const store = await getStoreBySlug(storeSlug)
   if (!store || !store.isActive) notFound()
 
   const style = {

@@ -2,6 +2,8 @@ import { prisma } from "@ordora/shared/lib/prisma"
 import Link from "next/link"
 import { Store } from "lucide-react"
 
+export const revalidate = 60
+
 export default async function HomePage() {
   const stores = await prisma.store.findMany({ where: { isActive: true }, orderBy: { name: "asc" } })
 
