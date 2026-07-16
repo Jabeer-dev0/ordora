@@ -34,8 +34,17 @@ model Store {
   timezone  String   @default("Europe/London")
   isActive  Boolean  @default(true)
 
+  description String?
+
   acceptingOrders Boolean  @default(true)
   closedUntil     DateTime?
+
+  deliveryEnabled  Boolean @default(true)
+  collectionEnabled Boolean @default(true)
+  minimumOrderAmount Int   @default(0)
+  deliveryFee      Int     @default(0)
+  estimatedPrepTime Int    @default(15)
+  website          String?
 
   webServiceCharge Int @default(0)
   bagCharge        Int @default(0)
@@ -54,9 +63,25 @@ model Store {
   modifierGroups  ModifierGroup[]
   banners         Banner[]
   openingHours    StoreOpeningHour[]
+  deliveryZones   DeliveryZone[]
 
   @@index([tenantId])
   @@index([slug])
+}
+
+model DeliveryZone {
+  id              String  @id @default(cuid())
+  storeId         String
+  store           Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  postcodePattern String
+  label           String
+  deliveryFee     Int     @default(0)
+  minimumOrder    Int     @default(0)
+  estimatedMins   Int     @default(30)
+  isActive        Boolean @default(true)
+  sortOrder       Int     @default(0)
+
+  @@index([storeId])
 }
 
 model StoreOpeningHour {

@@ -14,6 +14,16 @@ export async function getStores() {
   return stores
 }
 
+export async function getStore(storeId: string) {
+  return prisma.store.findUnique({
+    where: { id: storeId },
+    include: {
+      openingHours: { orderBy: { day: "asc" } },
+      deliveryZones: { orderBy: { sortOrder: "asc" } },
+    },
+  })
+}
+
 export async function getTenants() {
   const tenants = await prisma.tenant.findMany({
     where: { status: "ACTIVE" },
@@ -32,17 +42,35 @@ export async function getStoreStats() {
 export async function createStore(data: {
   name: string
   tenantId: string
+  slug?: string
   address?: string
   phone?: string
+  postcode?: string
+  brandColor?: string
+  accentColor?: string
+  tagline?: string
+  heroImageUrl?: string
+  webServiceCharge?: number
+  bagCharge?: number
 }) {
   if (!data.name || !data.tenantId) throw new Error("Name and tenant are required")
+
+  const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
 
   const store = await prisma.store.create({
     data: {
       tenantId: data.tenantId,
       name: data.name,
+      slug,
       address: data.address || null,
       phone: data.phone || null,
+      postcode: data.postcode || null,
+      brandColor: data.brandColor || null,
+      accentColor: data.accentColor || null,
+      tagline: data.tagline || null,
+      heroImageUrl: data.heroImageUrl || null,
+      webServiceCharge: data.webServiceCharge || 0,
+      bagCharge: data.bagCharge || 0,
       isActive: true,
     },
   })
@@ -52,7 +80,28 @@ export async function createStore(data: {
   return store
 }
 
-export async function updateStore(id: string, data: { name?: string; address?: string; phone?: string; isActive?: boolean }) {
+export async function updateStore(id: string, data: {
+  name?: string
+  slug?: string
+  address?: string | null
+  phone?: string | null
+  postcode?: string | null
+  description?: string | null
+  website?: string | null
+  brandColor?: string | null
+  accentColor?: string | null
+  tagline?: string | null
+  heroImageUrl?: string | null
+  webServiceCharge?: number
+  bagCharge?: number
+  deliveryEnabled?: boolean
+  collectionEnabled?: boolean
+  minimumOrderAmount?: number
+  deliveryFee?: number
+  estimatedPrepTime?: number
+  acceptingOrders?: boolean
+  isActive?: boolean
+}) {
   await prisma.store.update({ where: { id }, data })
   revalidatePath("/stores")
   revalidatePath("/dashboard")

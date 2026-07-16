@@ -1,7 +1,7 @@
 import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Phone, MapPin, Clock, ShoppingBag, Navigation } from "lucide-react"
+import { Phone, MapPin, Clock, ShoppingBag, Navigation, Truck } from "lucide-react"
 import { getStoreBySlug } from "@/lib/store"
 
 export const revalidate = 60
@@ -27,10 +27,11 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
   const store = await getStoreBySlug(storeSlug)
   if (!store || !store.isActive) notFound()
 
-  const [banners, openingHours, menuItems] = await Promise.all([
+  const [banners, openingHours, menuItems, deliveryZones] = await Promise.all([
     prisma.banner.findMany({ where: { storeId: store.id, isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.storeOpeningHour.findMany({ where: { storeId: store.id }, orderBy: { day: "asc" } }),
     prisma.menuItem.findMany({ where: { storeId: store.id, isAvailable: true, soldOut: false, isFeatured: true }, take: 6, orderBy: { sortOrder: "asc" } }),
+    prisma.deliveryZone.findMany({ where: { storeId: store.id, isActive: true }, orderBy: { sortOrder: "asc" } }),
   ])
 
   const hours = getOpenStatus(openingHours as any)
@@ -77,6 +78,12 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16">
+        {store.description && (
+          <section className="pt-6 pb-2">
+            <p className="text-sm text-muted-foreground max-w-2xl">{store.description}</p>
+          </section>
+        )}
+
         <section className="pt-6 pb-4">
           <h2 className="mb-4 font-display text-2xl tracking-tight" style={{ color: brandColor }}>Popular right now</h2>
           {menuItems.length > 0 ? (
@@ -165,20 +172,45 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
               })}
             </div>
             <div className="mt-4 flex gap-2">
-              {collectionHours.length > 0 && (
-                <span className="rounded-full border px-3 py-1 text-[11px] font-medium text-white"
-                  style={{ background: brandColor }}>
-                  collection
-                </span>
-              )}
-              {deliveryHours.length > 0 && (
+              {store.deliveryEnabled && (
                 <span className="rounded-full border px-3 py-1 text-[11px] font-medium text-white"
                   style={{ background: accentColor }}>
-                  delivery
+                  delivery available
+                </span>
+              )}
+              {store.collectionEnabled && (
+                <span className="rounded-full border px-3 py-1 text-[11px] font-medium text-white"
+                  style={{ background: brandColor }}>
+                  collection available
                 </span>
               )}
             </div>
           </div>
+
+          {(store.deliveryEnabled || store.collectionEnabled) && (
+            <div className="border-t border-border p-6 sm:p-8">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
+                <Truck className="h-4 w-4" style={{ color: accentColor }} /> Delivery & Collection
+              </h3>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                {store.minimumOrderAmount > 0 && <p>Minimum order: <span className="font-semibold text-foreground">£{(store.minimumOrderAmount / 100).toFixed(2)}</span></p>}
+                {store.deliveryFee > 0 && <p>Delivery fee from: <span className="font-semibold text-foreground">£{(store.deliveryFee / 100).toFixed(2)}</span></p>}
+                {store.estimatedPrepTime > 0 && <p>Estimated prep time: <span className="font-semibold text-foreground">{store.estimatedPrepTime} mins</span></p>}
+                {deliveryZones.length > 0 && (
+                  <div className="mt-3">
+                    <p className="font-medium text-foreground mb-1.5">Delivery areas:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {deliveryZones.map((z: any) => (
+                        <span key={z.id} className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium bg-white" style={{ borderColor: accentColor, color: accentColor }}>
+                          {z.label || z.postcodePattern} — £{(z.deliveryFee / 100).toFixed(2)} {z.estimatedMins && `· ${z.estimatedMins} mins`}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="mt-6 text-center">

@@ -25,6 +25,10 @@ export async function createTenant(data: {
   ownerPassword: string
   storeName: string
   plan?: string
+  logoUrl?: string
+  brandColor?: string
+  accentColor?: string
+  tagline?: string
 }) {
   if (!data.name || !data.ownerEmail || !data.ownerPassword || !data.storeName) {
     throw new Error("All fields are required")
@@ -34,12 +38,14 @@ export async function createTenant(data: {
   if (existing) throw new Error("Email already exists")
 
   const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+  const storeSlug = data.storeName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
   const hashedPassword = await bcrypt.hash(data.ownerPassword, 12)
 
   const tenant = await prisma.tenant.create({
     data: {
       name: data.name,
       slug,
+      logoUrl: data.logoUrl || null,
       plan: data.plan || "FREE",
       status: "ACTIVE",
     },
@@ -49,8 +55,10 @@ export async function createTenant(data: {
     data: {
       tenantId: tenant.id,
       name: data.storeName,
-      address: null,
-      phone: null,
+      slug: storeSlug,
+      brandColor: data.brandColor || null,
+      accentColor: data.accentColor || null,
+      tagline: data.tagline || null,
     },
   })
 
@@ -71,7 +79,22 @@ export async function createTenant(data: {
   revalidatePath("/tenants")
   revalidatePath("/stores")
   revalidatePath("/dashboard")
-  return tenant
+  return { tenant, store }
+}
+
+export async function updateTenant(id: string, data: {
+  name?: string
+  logoUrl?: string | null
+  brandColor?: string | null
+  accentColor?: string | null
+  tagline?: string | null
+  plan?: string
+  status?: string
+}) {
+  await prisma.tenant.update({ where: { id }, data })
+  revalidatePath("/tenants")
+  revalidatePath("/stores")
+  return { success: true }
 }
 
 export async function updateTenantStatus(id: string, status: string) {
