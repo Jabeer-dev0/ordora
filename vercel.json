@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run vercel-build:storefront",
+  "buildCommand": "npm run vercel-build:admin",
   "installCommand": "npm install",
-  "outputDirectory": "storefront/.next",
+  "outputDirectory": "admin/.next",
   "framework": "nextjs"
 }
