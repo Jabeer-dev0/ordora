@@ -9,7 +9,7 @@ export async function getMenuItems() {
   return prisma.menuItem.findMany({ where: { storeId: store.id }, orderBy: { createdAt: "desc" } })
 }
 
-export async function createMenuItem(data: { name: string; price: number; category: string; description?: string; modifierGroupIds?: string[] }) {
+export async function createMenuItem(data: { name: string; price: number; category: string; description?: string; modifierGroupIds?: string[]; imageUrl?: string }) {
   const store = await getStoreForSession()
 
   const item = await prisma.menuItem.create({
@@ -19,6 +19,7 @@ export async function createMenuItem(data: { name: string; price: number; catego
       price: data.price,
       category: data.category,
       description: data.description,
+      imageUrl: data.imageUrl || null,
       isAvailable: true,
       modifierGroups: data.modifierGroupIds?.length
         ? { create: data.modifierGroupIds.map((id, i) => ({ modifierGroupId: id, sortOrder: i })) }
@@ -30,7 +31,7 @@ export async function createMenuItem(data: { name: string; price: number; catego
   return item
 }
 
-export async function updateMenuItem(id: string, data: { name?: string; price?: number; category?: string; isAvailable?: boolean; description?: string; modifierGroupIds?: string[] }) {
+export async function updateMenuItem(id: string, data: { name?: string; price?: number; category?: string; isAvailable?: boolean; description?: string; modifierGroupIds?: string[]; imageUrl?: string }) {
   await getStoreForSession()
 
   if (data.modifierGroupIds !== undefined) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@ordora/shared/components/ui/button"
@@ -15,7 +15,7 @@ import { Label } from "@ordora/shared/components/ui/label"
 import { Textarea } from "@ordora/shared/components/ui/textarea"
 import { Badge } from "@ordora/shared/components/ui/badge"
 import {
-  Plus, Pencil, Trash2, ArrowLeft, X, Settings2, FolderPlus,
+  Plus, Pencil, Trash2, ArrowLeft, X, Settings2, FolderPlus, ImagePlus, Upload,
 } from "lucide-react"
 import {
   createMenuItem, updateMenuItem, deleteMenuItem,
@@ -26,11 +26,67 @@ import { formatCurrency } from "@ordora/shared/lib/utils"
 interface ModItem { id: string; name: string; price: number }
 interface ModGroup { id: string; name: string; required: boolean; minSelect: number; maxSelect: number; items: ModItem[] }
 interface MenuItem {
-  id: string; name: string; description: string | null; price: number; category: string; isAvailable: boolean
+  id: string; name: string; description: string | null; price: number; category: string; isAvailable: boolean; imageUrl: string | null
   modifierGroups: { modifierGroup: ModGroup }[]
 }
 
 type View = "categories" | "items" | "modifiers"
+
+function ImageUpload({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2MB"); return }
+    const reader = new FileReader()
+    reader.onload = () => onChange(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }
+
+  if (value) {
+    return (
+      <div className="relative group">
+        <img src={value} alt="Menu item" className="h-32 w-full rounded-lg object-cover border" />
+        <button onClick={() => onChange(null)}
+          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition">
+          <X className="h-3 w-3" />
+        </button>
+        <button onClick={() => fileRef.current?.click()}
+          className="absolute bottom-1 right-1 flex h-6 items-center gap-1 rounded-full bg-black/60 px-2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition">
+          <Upload className="h-3 w-3" /> Replace
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => {
+          const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""
+        }} />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      onClick={() => fileRef.current?.click()}
+      className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition ${dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/20 hover:border-primary/40 hover:bg-muted/30"}`}
+    >
+      <ImagePlus className="mb-1 h-6 w-6 text-muted-foreground/40" />
+      <p className="text-xs text-muted-foreground/60">Click or drag image here</p>
+      <p className="text-[10px] text-muted-foreground/40">JPG, PNG up to 2MB</p>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => {
+        const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""
+      }} />
+    </div>
+  )
+}
 
 export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modifierGroups: ModGroup[] }) {
   const router = useRouter()
@@ -51,6 +107,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
   const [fPrice, setFPrice] = useState("")
   const [fCategory, setFCategory] = useState("")
   const [fModGroupIds, setFModGroupIds] = useState<string[]>([])
+  const [fImageUrl, setFImageUrl] = useState<string | null>(null)
   const [fGroupName, setFGroupName] = useState("")
   const [fGroupRequired, setFGroupRequired] = useState(false)
   const [fGroupMin, setFGroupMin] = useState("0")
@@ -60,7 +117,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
   const [fNewCatName, setFNewCatName] = useState("")
 
   function reset() {
-    setFName(""); setFDesc(""); setFPrice(""); setFCategory(""); setFModGroupIds([])
+    setFName(""); setFDesc(""); setFPrice(""); setFCategory(""); setFModGroupIds([]); setFImageUrl(null)
     setFGroupName(""); setFGroupRequired(false); setFGroupMin("0"); setFGroupMax("1")
     setFModName(""); setFModPrice("")
   }
@@ -79,6 +136,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
         price: parseFloat(fPrice),
         category: cat,
         description: fDesc.trim() || undefined,
+        imageUrl: fImageUrl || undefined,
         modifierGroupIds: fModGroupIds.length > 0 ? fModGroupIds : undefined,
       })
       toast.success("Item created")
@@ -101,6 +159,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
         price: parseFloat(fPrice),
         category: fCategory.trim() || editItem.category,
         description: fDesc.trim() || undefined,
+        imageUrl: fImageUrl || undefined,
         modifierGroupIds: fModGroupIds,
       })
       toast.success("Item updated")
@@ -324,29 +383,38 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           {catItems.map(item => (
-            <div key={item.id} className="rounded-xl border bg-card p-4 transition-all hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold">{item.name}</h3>
-                  <p className="text-lg font-bold text-[hsl(24,95%,53%)]">{formatCurrency(item.price)}</p>
-                  {item.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>}
-                </div>
-                <Badge variant={item.isAvailable ? "default" : "destructive"} className="text-[10px]">{item.isAvailable ? "Active" : "Hidden"}</Badge>
-              </div>
-              {item.modifierGroups.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {item.modifierGroups.map(({ modifierGroup: mg }) => (
-                    <Badge key={mg.id} variant="outline" className="text-[10px]">{mg.name} ({mg.items.length})</Badge>
-                  ))}
+            <div key={item.id} className="rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md">
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt={item.name} className="h-36 w-full object-cover" />
+              ) : (
+                <div className="flex h-36 w-full items-center justify-center bg-muted text-3xl">
+                  {categoryEmoji[item.category] || "🍽"}
                 </div>
               )}
-              <div className="mt-3 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => {
-                  setFName(item.name); setFDesc(item.description || ""); setFPrice(String(item.price)); setFCategory(item.category)
-                  setFModGroupIds(item.modifierGroups.map(mg => mg.modifierGroup.id))
-                  setEditItem(item)
-                }}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
-                <Button variant="destructive" size="sm" className="flex-1" onClick={() => setDeleteItem(item)}><Trash2 className="mr-1 h-3 w-3" /> Delete</Button>
+              <div className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold">{item.name}</h3>
+                    <p className="text-lg font-bold text-[hsl(24,95%,53%)]">{formatCurrency(item.price)}</p>
+                    {item.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>}
+                  </div>
+                  <Badge variant={item.isAvailable ? "default" : "destructive"} className="text-[10px]">{item.isAvailable ? "Active" : "Hidden"}</Badge>
+                </div>
+                {item.modifierGroups.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {item.modifierGroups.map(({ modifierGroup: mg }) => (
+                      <Badge key={mg.id} variant="outline" className="text-[10px]">{mg.name} ({mg.items.length})</Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => {
+                    setFName(item.name); setFDesc(item.description || ""); setFPrice(String(item.price)); setFCategory(item.category); setFImageUrl(item.imageUrl || null)
+                    setFModGroupIds(item.modifierGroups.map(mg => mg.modifierGroup.id))
+                    setEditItem(item)
+                  }}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
+                  <Button variant="destructive" size="sm" className="flex-1" onClick={() => setDeleteItem(item)}><Trash2 className="mr-1 h-3 w-3" /> Delete</Button>
+                </div>
               </div>
             </div>
           ))}
@@ -362,6 +430,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
           <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add Menu Item</DialogTitle></DialogHeader>
             <div className="space-y-3">
+              <ImageUpload value={fImageUrl} onChange={setFImageUrl} />
               <div>
                 <Label>Category *</Label>
                 <Select value={fCategory || selectedCategory} onValueChange={v => setFCategory(v)}>
@@ -404,6 +473,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
           <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Edit {editItem?.name}</DialogTitle></DialogHeader>
             <div className="space-y-3">
+              <ImageUpload value={fImageUrl} onChange={setFImageUrl} />
               <div>
                 <Label>Category</Label>
                 <Select value={fCategory || editItem?.category || ""} onValueChange={v => setFCategory(v)}>
