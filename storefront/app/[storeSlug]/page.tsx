@@ -37,31 +37,48 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
   const collectionHours = openingHours.filter((h: any) => h.orderType === "COLLECTION")
   const deliveryHours = openingHours.filter((h: any) => h.orderType === "DELIVERY")
 
+  const brandColor = store.brandColor || "#FF5733"
+  const accentColor = store.accentColor || "#1E40AF"
+  const logoUrl = store.tenant?.logoUrl || null
+  const tagline = store.tagline || null
+  const headerBg = `linear-gradient(135deg, ${brandColor}, ${accentColor})`
+
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-50" style={{ background: headerBg }}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href={`/${storeSlug}`} className="font-display text-lg tracking-tight text-foreground">{store.name}</Link>
+          <Link href={`/${storeSlug}`} className="flex items-center gap-2">
+            {logoUrl && (
+              <img src={logoUrl} alt={store.name} className="h-8 w-8 rounded-full object-cover" />
+            )}
+            <span className="font-display text-lg tracking-tight text-white">{store.name}</span>
+          </Link>
           <nav className="hidden items-center gap-5 text-sm font-medium sm:flex">
-            <Link href={`/${storeSlug}`} className="text-secondary hover:underline underline-offset-2">Home</Link>
-            <Link href={`/${storeSlug}/menu`} className="text-muted-foreground hover:text-foreground transition">Menu</Link>
+            <Link href={`/${storeSlug}`} className="text-white/80 hover:text-white transition underline-offset-2">Home</Link>
+            <Link href={`/${storeSlug}/menu`} className="text-white/80 hover:text-white transition">Menu</Link>
           </nav>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-semibold border border-border">
-              <span className={`size-1.5 rounded-full ${hours.isOpen ? "bg-emerald-500" : "bg-destructive"}`} />
-              <span className={hours.isOpen ? "text-emerald-700" : "text-destructive"}>{hours.text}</span>
+            <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+              <span className={`size-1.5 rounded-full ${hours.isOpen ? "bg-emerald-400" : "bg-red-400"}`} />
+              <span className="text-white">{hours.text}</span>
             </span>
             <Link href={`/${storeSlug}/menu`}
-              className="flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition">
+              className="flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold transition hover:bg-white/90"
+              style={{ color: brandColor }}>
               <ShoppingBag className="mr-1.5 h-4 w-4" /> Order
             </Link>
           </div>
         </div>
+        {tagline && (
+          <div className="mx-auto max-w-6xl px-4 pb-2">
+            <p className="text-xs text-white/70">{tagline}</p>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <section className="pt-6 pb-4">
-          <h2 className="mb-4 font-display text-2xl tracking-tight text-foreground">Popular right now</h2>
+          <h2 className="mb-4 font-display text-2xl tracking-tight" style={{ color: brandColor }}>Popular right now</h2>
           {menuItems.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {menuItems.map((item, i) => (
@@ -75,12 +92,13 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                         {i + 1}
                       </div>
                     )}
-                    <span className="absolute -top-1 -right-1 flex size-7 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-secondary-foreground shadow-md">
+                    <span className="absolute -top-1 -right-1 flex size-7 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-md"
+                      style={{ background: brandColor }}>
                       #{i + 1}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:text-secondary transition">{item.name}</h3>
-                  <p className="mt-0.5 text-sm font-bold text-foreground">£{item.price.toFixed(2)}</p>
+                  <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:underline transition">{item.name}</h3>
+                  <p className="mt-0.5 text-sm font-bold" style={{ color: brandColor }}>£{item.price.toFixed(2)}</p>
                 </Link>
               ))}
             </div>
@@ -91,7 +109,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
 
         <section className="rounded-card-lg bg-card border border-border shadow-card overflow-hidden">
           <div className="p-6 sm:p-8">
-            <h2 className="mb-1 font-display text-xl tracking-tight text-foreground">Find us</h2>
+            <h2 className="mb-1 font-display text-xl tracking-tight" style={{ color: brandColor }}>Find us</h2>
             <p className="mb-5 text-sm text-muted-foreground">Visit {store.name}</p>
 
             <div className="flex items-center gap-2 mb-4">
@@ -109,14 +127,15 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                     <p>{store.address}{store.postcode ? `, ${store.postcode}` : ""}</p>
                     <a href={`https://maps.google.com/?q=${encodeURIComponent(store.address || "")}`}
                       target="_blank" rel="noopener"
-                      className="mt-0.5 inline-flex items-center gap-1 text-secondary font-medium hover:underline text-xs">
+                      className="mt-0.5 inline-flex items-center gap-1 font-medium hover:underline text-xs"
+                      style={{ color: brandColor }}>
                       <Navigation className="h-3 w-3" /> Get directions
                     </a>
                   </div>
                 </div>
               )}
               {store.phone && (
-                <a href={`tel:${store.phone}`} className="flex items-center gap-2.5 text-foreground hover:text-secondary transition">
+                <a href={`tel:${store.phone}`} className="flex items-center gap-2.5 text-foreground hover:opacity-80 transition">
                   <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span>{store.phone}</span>
                   <span className="text-xs text-muted-foreground ml-auto">Tap to call</span>
@@ -127,7 +146,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
 
           <div className="border-t border-border bg-muted/40 p-6 sm:p-8">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-              <Clock className="h-4 w-4 text-muted-foreground" /> Opening hours
+              <Clock className="h-4 w-4" style={{ color: brandColor }} /> Opening hours
             </h3>
             <div className="space-y-1.5 text-sm">
               {DAYS.map((day, i) => {
@@ -138,7 +157,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                     <span className={isToday ? "text-foreground" : ""}>
                       {day}{isToday ? " · today" : ""}
                     </span>
-                    <span className={isToday ? "text-foreground" : ""}>
+                    <span className={isToday ? "" : ""} style={isToday ? { color: brandColor } : {}}>
                       {h?.isActive ? `${h.open}–${h.close}` : "Closed"}
                     </span>
                   </div>
@@ -147,10 +166,16 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
             </div>
             <div className="mt-4 flex gap-2">
               {collectionHours.length > 0 && (
-                <span className="rounded-full bg-card border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground">collection</span>
+                <span className="rounded-full border px-3 py-1 text-[11px] font-medium text-white"
+                  style={{ background: brandColor }}>
+                  collection
+                </span>
               )}
               {deliveryHours.length > 0 && (
-                <span className="rounded-full bg-card border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground">delivery</span>
+                <span className="rounded-full border px-3 py-1 text-[11px] font-medium text-white"
+                  style={{ background: accentColor }}>
+                  delivery
+                </span>
               )}
             </div>
           </div>
@@ -158,44 +183,45 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
 
         <div className="mt-6 text-center">
           <Link href={`/${storeSlug}/menu`}
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-lg shadow-primary/20">
+            className="inline-flex h-12 items-center justify-center rounded-lg px-8 text-sm font-semibold text-white transition shadow-lg"
+            style={{ background: headerBg }}>
             Order online for collection or delivery
           </Link>
         </div>
       </main>
 
-      <footer className="border-t border-border bg-card">
+      <footer style={{ background: headerBg }}>
         <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="mb-3 font-display text-sm tracking-tight text-foreground">Explore</p>
+              <p className="mb-3 font-display text-sm tracking-tight text-white">Explore</p>
               <div className="space-y-1.5 text-sm">
-                <p><Link href={`/${storeSlug}`} className="text-muted-foreground hover:text-foreground transition">Home</Link></p>
-                <p><Link href={`/${storeSlug}/menu`} className="text-muted-foreground hover:text-foreground transition">Order online</Link></p>
+                <p><Link href={`/${storeSlug}`} className="text-white/70 hover:text-white transition">Home</Link></p>
+                <p><Link href={`/${storeSlug}/menu`} className="text-white/70 hover:text-white transition">Order online</Link></p>
               </div>
             </div>
             <div>
-              <p className="mb-3 font-display text-sm tracking-tight text-foreground">Legal</p>
+              <p className="mb-3 font-display text-sm tracking-tight text-white">Legal</p>
               <div className="space-y-1.5 text-sm">
-                <p><Link href={`/${storeSlug}/terms`} className="text-muted-foreground hover:text-foreground transition">Terms & Conditions</Link></p>
-                <p><Link href={`/${storeSlug}/privacy`} className="text-muted-foreground hover:text-foreground transition">Privacy Policy</Link></p>
+                <p><Link href={`/${storeSlug}/terms`} className="text-white/70 hover:text-white transition">Terms & Conditions</Link></p>
+                <p><Link href={`/${storeSlug}/privacy`} className="text-white/70 hover:text-white transition">Privacy Policy</Link></p>
               </div>
             </div>
             <div>
-              <p className="mb-3 font-display text-sm tracking-tight text-foreground">Get in touch</p>
+              <p className="mb-3 font-display text-sm tracking-tight text-white">Get in touch</p>
               <div className="space-y-1.5 text-sm">
                 {store.phone && (
-                  <p><a href={`tel:${store.phone}`} className="text-muted-foreground hover:text-foreground transition">{store.phone}</a></p>
+                  <p><a href={`tel:${store.phone}`} className="text-white/70 hover:text-white transition">{store.phone}</a></p>
                 )}
                 {store.address && (
-                  <p className="text-muted-foreground">{store.address}{store.postcode ? `, ${store.postcode}` : ""}</p>
+                  <p className="text-white/70">{store.address}{store.postcode ? `, ${store.postcode}` : ""}</p>
                 )}
               </div>
             </div>
           </div>
-          <div className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+          <div className="mt-8 border-t border-white/20 pt-4 text-center text-xs text-white/60">
             <p>© 2026 {store.name}. All rights reserved.</p>
-            <p className="mt-1">Powered by <span className="font-semibold text-secondary">Ordora</span></p>
+            <p className="mt-1">Powered by <span className="font-semibold text-white">Ordora</span></p>
           </div>
         </div>
       </footer>

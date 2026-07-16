@@ -21,6 +21,7 @@ export async function createOnlineOrder(data: {
   serviceCharge: number
   bagCharge: number
   total: number
+  paymentMethod?: string
 }) {
   const store = await prisma.store.findUnique({ where: { slug: data.storeSlug } })
   if (!store) throw new Error("Store not found")
@@ -30,7 +31,7 @@ export async function createOnlineOrder(data: {
       storeId: store.id,
       source: "ONLINE",
       orderType: data.orderType.toUpperCase(),
-      paymentMethod: "cash",
+      paymentMethod: data.paymentMethod || "cash",
       subtotal: data.subtotal,
       discount: 0,
       tax: 0,

@@ -40,6 +40,11 @@ model Store {
   webServiceCharge Int @default(0)
   bagCharge        Int @default(0)
 
+  brandColor   String?
+  accentColor  String?
+  tagline      String?
+  heroImageUrl String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
