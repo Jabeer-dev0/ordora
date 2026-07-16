@@ -2,7 +2,11 @@
 
 import Stripe from "stripe"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", { apiVersion: "2024-12-18.acacia" as any })
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key || key === "sk_test_placeholder") return null
+  return new Stripe(key)
+}
 
 export async function createCheckoutSession(data: {
   storeName: string
@@ -19,6 +23,9 @@ export async function createCheckoutSession(data: {
   successUrl: string
   cancelUrl: string
 }) {
+  const stripe = getStripe()
+  if (!stripe) throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY.")
+
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = data.items.map(item => ({
     price_data: {
       currency: "gbp",
@@ -53,7 +60,6 @@ export async function createCheckoutSession(data: {
     payment_method_types: ["card"],
     line_items: lineItems,
     mode: "payment",
-    customer_email: undefined,
     metadata: {
       customerName: data.customerName,
       customerPhone: data.customerPhone,
@@ -69,6 +75,9 @@ export async function createCheckoutSession(data: {
 }
 
 export async function verifyCheckoutSession(sessionId: string) {
+  const stripe = getStripe()
+  if (!stripe) return { success: false, metadata: null, amount: 0 }
+
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     return { 
