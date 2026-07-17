@@ -189,6 +189,11 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
             <div className="absolute inset-0" style={{ backgroundColor: "rgb(10 10 10 / 0.82)" }} />
           </div>
           <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8">
+            {/* Section header above the picture/map */}
+            <div className="mb-7">
+              <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--brand)" }}>Find us</span>
+              <h2 className="font-display text-3xl sm:text-5xl uppercase tracking-tight mt-1" style={{ color: "var(--theme-ink-foreground)" }}>Visit {storeName}</h2>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-10 items-start">
               {/* Map */}
               <div className="overflow-hidden shadow-lg h-[360px] order-2 lg:order-1" style={{ borderRadius: "var(--radius-card)" }}>
@@ -208,11 +213,9 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
 
               {/* Info Panel */}
               <div className="overflow-hidden order-1 lg:order-2" style={{ backgroundColor: "white", borderRadius: "var(--radius-card)", boxShadow: "var(--card-shadow, var(--shadow-card))" }}>
-                {/* Label + Title */}
+                {/* Open status */}
                 <div className="px-6 pt-6 pb-4">
-                  <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--brand)" }}>Find us</span>
-                  <h2 className="font-display text-3xl sm:text-4xl uppercase tracking-tight mt-1" style={{ color: "var(--theme-ink)" }}>Visit {storeName}</h2>
-                  <div className="mt-2">
+                  <div>
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${hours.isOpen ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
                       <span className={`size-1.5 rounded-full ${hours.isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
                       {hours.isOpen ? "Open now" : "Closed"}
@@ -322,17 +325,13 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
           </div>
 
           {/* Bottom bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.25rem" }}>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.25rem" }}>
             <p className="text-xs text-white/30">&copy; {new Date().getFullYear()} {storeName}. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs text-white/30">
               <Link href={`/${storeSlug}/terms`} className="hover:text-white transition">Terms</Link>
               <Link href={`/${storeSlug}/privacy`} className="hover:text-white transition">Privacy</Link>
+              <span className="text-white/30">Powered by <span className="font-bold" style={{ color: "var(--red, #e31e24)" }}>Ordora</span></span>
             </div>
-          </div>
-
-          {/* Powered by Ordora */}
-          <div className="mt-6 pt-5 flex flex-col items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-            <span className="text-sm text-white/30">Powered by <span className="font-bold" style={{ color: "var(--brand)" }}>Ordora</span></span>
           </div>
         </div>
       </footer>

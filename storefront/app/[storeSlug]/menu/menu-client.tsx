@@ -742,15 +742,13 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
               </ul>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.25rem" }}>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.25rem" }}>
             <p className="text-xs text-white/30">&copy; {new Date().getFullYear()} {storeName}. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs text-white/30">
               <a href={`/${store.slug}/terms`} className="transition">Terms</a>
               <a href={`/${store.slug}/privacy`} className="transition">Privacy</a>
+              <span className="text-white/30">Powered by <span className="font-bold" style={{ color: "var(--red, #e31e24)" }}>Ordora</span></span>
             </div>
-          </div>
-          <div className="mt-6 pt-5 flex flex-col items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-            <span className="text-sm text-white/30">Powered by <span className="font-bold text-white/60">Ordora</span></span>
           </div>
         </div>
       </footer>
