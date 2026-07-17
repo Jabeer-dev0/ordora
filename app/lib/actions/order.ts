@@ -91,11 +91,15 @@ export async function createOrder(data: {
 }
 
 export async function updateOrderStatus(id: string, status: string) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
 
-  const order = await prisma.order.update({ where: { id }, data: { status } })
+  const order = await prisma.order.findUnique({ where: { id }, select: { storeId: true } })
+  if (!order) throw new Error("Order not found")
+  if (order.storeId !== store.id) throw new Error("Unauthorized — order does not belong to your store")
+
+  const updated = await prisma.order.update({ where: { id }, data: { status } })
   revalidatePath("/orders")
   revalidatePath("/dashboard")
   revalidatePath("/reports")
-  return order
+  return updated
 }

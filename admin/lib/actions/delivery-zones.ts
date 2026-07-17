@@ -64,7 +64,11 @@ export async function upsertDeliveryZones(storeId: string, zones: DeliveryZoneIn
 }
 
 export async function deleteDeliveryZone(id: string) {
-  await prisma.deliveryZone.delete({ where: { id } })
-  revalidatePath("/stores")
-  return { success: true }
+  try {
+    await prisma.deliveryZone.delete({ where: { id } })
+    revalidatePath("/stores")
+    return { success: true }
+  } catch {
+    throw new Error("Delivery zone not found or delete failed")
+  }
 }

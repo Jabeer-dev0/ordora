@@ -1,12 +1,21 @@
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { prisma } from "@ordora/shared/lib/prisma"
 import { StaffClient } from "./staff-client"
 
 export default async function StaffPage() {
   const session = await auth()
-  const store = await prisma.store.findFirst({
-    where: { tenantId: session?.user?.tenantId || "", isActive: true },
-  })
+  if (!session?.user) redirect("/login")
+
+  let tenantId = session.user.tenantId
+  if (!tenantId) {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { tenantId: true } })
+    tenantId = user?.tenantId || null
+  }
+
+  const store = tenantId
+    ? await prisma.store.findFirst({ where: { tenantId, isActive: true } })
+    : null
 
   const staff = store
     ? await prisma.staff.findMany({

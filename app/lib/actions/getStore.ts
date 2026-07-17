@@ -8,24 +8,20 @@ export async function getStoreForSession() {
   if (!session?.user) throw new Error("Unauthorized — please log in again")
 
   let tenantId = session.user.tenantId
-  let userId = session.user.id
 
-  if (!tenantId && userId) {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { tenantId: true } })
+  // Resolve tenantId from DB if not in session token
+  if (!tenantId && session.user.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { tenantId: true },
+    })
     tenantId = user?.tenantId || null
   }
 
-  if (!tenantId && userId) {
-    const firstTenant = await prisma.tenant.findFirst({ orderBy: { createdAt: "asc" } })
-    if (firstTenant) {
-      await prisma.user.update({ where: { id: userId }, data: { tenantId: firstTenant.id } })
-      tenantId = firstTenant.id
-    }
-  }
-
-  if (!tenantId) throw new Error("No tenants found in system. Please register a business first.")
+  if (!tenantId) throw new Error("Your account is not linked to a business. Please contact support.")
 
   const store = await prisma.store.findFirst({ where: { tenantId, isActive: true } })
   if (!store) throw new Error("No active store found — please set up a store first.")
+
   return store
 }

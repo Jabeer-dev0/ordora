@@ -1,15 +1,31 @@
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { prisma } from "@ordora/shared/lib/prisma"
 import { ReportsClient } from "./reports-client"
 
 export default async function ReportsPage() {
   const session = await auth()
-  const store = await prisma.store.findFirst({
-    where: { tenantId: session?.user?.tenantId || "", isActive: true },
-  })
+  if (!session?.user) redirect("/login")
+
+  let tenantId = session.user.tenantId
+  if (!tenantId) {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { tenantId: true } })
+    tenantId = user?.tenantId || null
+  }
+
+  const store = tenantId
+    ? await prisma.store.findFirst({ where: { tenantId, isActive: true } })
+    : null
 
   if (!store) {
-    return <div className="p-6 text-muted-foreground">No active store found.</div>
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+          <p className="text-muted-foreground">No active store found.</p>
+        </div>
+      </div>
+    )
   }
 
   const now = new Date()
@@ -37,8 +53,15 @@ export default async function ReportsPage() {
     category: itemMap[i.menuItemId]?.category || "Unknown",
   }))
 
+  const todayCompletedCount = todayOrders.filter(o => o.status === "COMPLETED").length
+  const todayRevenue = calcRevenue(todayOrders)
+
   const data = {
-    today: { revenue: calcRevenue(todayOrders), orders: calcCount(todayOrders), avg: todayOrders.length > 0 ? calcRevenue(todayOrders) / todayOrders.filter(o => o.status === "COMPLETED").length : 0 },
+    today: {
+      revenue: todayRevenue,
+      orders: calcCount(todayOrders),
+      avg: todayCompletedCount > 0 ? todayRevenue / todayCompletedCount : 0,
+    },
     week: { revenue: calcRevenue(weekOrders), orders: calcCount(weekOrders) },
     month: { revenue: calcRevenue(monthOrders), orders: calcCount(monthOrders) },
     topItems: resolvedTopItems,

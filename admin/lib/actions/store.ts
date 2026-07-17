@@ -102,15 +102,23 @@ export async function updateStore(id: string, data: {
   acceptingOrders?: boolean
   isActive?: boolean
 }) {
-  await prisma.store.update({ where: { id }, data })
-  revalidatePath("/stores")
-  revalidatePath("/dashboard")
-  return { success: true }
+  try {
+    await prisma.store.update({ where: { id }, data })
+    revalidatePath("/stores")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch {
+    throw new Error("Store not found or update failed")
+  }
 }
 
 export async function deleteStore(id: string) {
-  await prisma.store.delete({ where: { id } })
-  revalidatePath("/stores")
-  revalidatePath("/dashboard")
-  return { success: true }
+  try {
+    await prisma.store.delete({ where: { id } })
+    revalidatePath("/stores")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch {
+    throw new Error("Store not found or delete failed")
+  }
 }

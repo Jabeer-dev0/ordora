@@ -25,14 +25,24 @@ export async function createStaff(data: { name: string; role: string; email?: st
 }
 
 export async function updateStaffRole(id: string, role: string) {
-  await getStoreForSession()
-  const member = await prisma.staff.update({ where: { id }, data: { role } })
+  const store = await getStoreForSession()
+
+  const member = await prisma.staff.findUnique({ where: { id }, select: { storeId: true } })
+  if (!member) throw new Error("Staff member not found")
+  if (member.storeId !== store.id) throw new Error("Unauthorized — staff member does not belong to your store")
+
+  const updated = await prisma.staff.update({ where: { id }, data: { role } })
   revalidatePath("/staff")
-  return member
+  return updated
 }
 
 export async function removeStaff(id: string) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const member = await prisma.staff.findUnique({ where: { id }, select: { storeId: true } })
+  if (!member) throw new Error("Staff member not found")
+  if (member.storeId !== store.id) throw new Error("Unauthorized — staff member does not belong to your store")
+
   await prisma.staff.delete({ where: { id } })
   revalidatePath("/staff")
   return { success: true }

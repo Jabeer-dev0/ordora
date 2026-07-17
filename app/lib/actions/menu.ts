@@ -32,7 +32,11 @@ export async function createMenuItem(data: { name: string; price: number; catego
 }
 
 export async function updateMenuItem(id: string, data: { name?: string; price?: number; category?: string; isAvailable?: boolean; description?: string; modifierGroupIds?: string[]; imageUrl?: string }) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const item = await prisma.menuItem.findUnique({ where: { id }, select: { storeId: true } })
+  if (!item) throw new Error("Menu item not found")
+  if (item.storeId !== store.id) throw new Error("Unauthorized — item does not belong to your store")
 
   if (data.modifierGroupIds !== undefined) {
     await prisma.menuItemModifierGroup.deleteMany({ where: { menuItemId: id } })
@@ -51,7 +55,12 @@ export async function updateMenuItem(id: string, data: { name?: string; price?: 
 }
 
 export async function deleteMenuItem(id: string) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const item = await prisma.menuItem.findUnique({ where: { id }, select: { storeId: true } })
+  if (!item) throw new Error("Menu item not found")
+  if (item.storeId !== store.id) throw new Error("Unauthorized — item does not belong to your store")
+
   await prisma.menuItem.delete({ where: { id } })
   revalidatePath("/menu")
   revalidatePath("/epos")
@@ -82,7 +91,12 @@ export async function createModifierGroup(data: { name: string; required?: boole
 }
 
 export async function updateModifierGroup(id: string, data: { name?: string; required?: boolean; minSelect?: number; maxSelect?: number }) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const group = await prisma.modifierGroup.findUnique({ where: { id }, select: { storeId: true } })
+  if (!group) throw new Error("Modifier group not found")
+  if (group.storeId !== store.id) throw new Error("Unauthorized — modifier group does not belong to your store")
+
   await prisma.modifierGroup.update({ where: { id }, data })
   revalidatePath("/menu")
   revalidatePath("/epos")
@@ -90,7 +104,12 @@ export async function updateModifierGroup(id: string, data: { name?: string; req
 }
 
 export async function deleteModifierGroup(id: string) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const group = await prisma.modifierGroup.findUnique({ where: { id }, select: { storeId: true } })
+  if (!group) throw new Error("Modifier group not found")
+  if (group.storeId !== store.id) throw new Error("Unauthorized — modifier group does not belong to your store")
+
   await prisma.modifierGroup.delete({ where: { id } })
   revalidatePath("/menu")
   revalidatePath("/epos")
@@ -98,7 +117,12 @@ export async function deleteModifierGroup(id: string) {
 }
 
 export async function addModifierToGroup(groupId: string, data: { name: string; price: number; maxQuantity?: number }) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const group = await prisma.modifierGroup.findUnique({ where: { id: groupId }, select: { storeId: true } })
+  if (!group) throw new Error("Modifier group not found")
+  if (group.storeId !== store.id) throw new Error("Unauthorized — modifier group does not belong to your store")
+
   const count = await prisma.modifier.count({ where: { modifierGroupId: groupId } })
   const mod = await prisma.modifier.create({
     data: { modifierGroupId: groupId, name: data.name, price: data.price, sortOrder: count, maxQuantity: data.maxQuantity || 1 },
@@ -109,7 +133,12 @@ export async function addModifierToGroup(groupId: string, data: { name: string; 
 }
 
 export async function deleteModifier(id: string) {
-  await getStoreForSession()
+  const store = await getStoreForSession()
+
+  const mod = await prisma.modifier.findUnique({ where: { id }, select: { modifierGroup: { select: { storeId: true } } } })
+  if (!mod) throw new Error("Modifier not found")
+  if (mod.modifierGroup.storeId !== store.id) throw new Error("Unauthorized — modifier does not belong to your store")
+
   await prisma.modifier.delete({ where: { id } })
   revalidatePath("/menu")
   revalidatePath("/epos")

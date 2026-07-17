@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { prisma } from "@ordora/shared/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@ordora/shared/components/ui/card"
 import { Badge } from "@ordora/shared/components/ui/badge"
@@ -7,47 +8,65 @@ import { formatCurrency } from "@ordora/shared/lib/utils"
 
 export default async function DashboardPage() {
   const session = await auth()
+  if (!session?.user) redirect("/login")
 
-  const store = await prisma.store.findFirst({
-    where: { tenantId: session?.user?.tenantId || "", isActive: true },
-    include: {
-      _count: { select: { orders: true, menuItems: true, staff: true } },
-    },
-  })
+  let tenantId = session.user.tenantId
+  if (!tenantId) {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { tenantId: true } })
+    tenantId = user?.tenantId || null
+  }
+
+  const store = tenantId
+    ? await prisma.store.findFirst({
+        where: { tenantId, isActive: true },
+        include: { _count: { select: { orders: true, menuItems: true, staff: true } } },
+      })
+    : null
+
+  if (!store) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">No active store found. Please set up a store first.</p>
+        </div>
+      </div>
+    )
+  }
 
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
   const [todaysOrders, totalRevenue, todaysRevenue, avgOrder, pendingCount, preparingCount, completedToday, cancelledToday] = await Promise.all([
     prisma.order.findMany({
-      where: { storeId: store?.id, createdAt: { gte: todayStart } },
+      where: { storeId: store.id, createdAt: { gte: todayStart } },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { user: { select: { name: true } }, items: true },
     }),
     prisma.order.aggregate({
-      where: { storeId: store?.id, status: "COMPLETED" },
+      where: { storeId: store.id, status: "COMPLETED" },
       _sum: { total: true },
     }),
     prisma.order.aggregate({
-      where: { storeId: store?.id, status: "COMPLETED", createdAt: { gte: todayStart } },
+      where: { storeId: store.id, status: "COMPLETED", createdAt: { gte: todayStart } },
       _sum: { total: true },
     }),
     prisma.order.aggregate({
-      where: { storeId: store?.id, status: "COMPLETED" },
+      where: { storeId: store.id, status: "COMPLETED" },
       _avg: { total: true },
     }),
     prisma.order.count({
-      where: { storeId: store?.id, status: "PENDING" },
+      where: { storeId: store.id, status: "PENDING" },
     }),
     prisma.order.count({
-      where: { storeId: store?.id, status: "PREPARING" },
+      where: { storeId: store.id, status: "PREPARING" },
     }),
     prisma.order.count({
-      where: { storeId: store?.id, status: "COMPLETED", createdAt: { gte: todayStart } },
+      where: { storeId: store.id, status: "COMPLETED", createdAt: { gte: todayStart } },
     }),
     prisma.order.count({
-      where: { storeId: store?.id, status: "CANCELLED", createdAt: { gte: todayStart } },
+      where: { storeId: store.id, status: "CANCELLED", createdAt: { gte: todayStart } },
     }),
   ])
 
@@ -55,7 +74,7 @@ export default async function DashboardPage() {
     { name: "Today's Revenue", value: formatCurrency(Number(todaysRevenue._sum.total || 0)), icon: DollarSign, color: "text-emerald-600" },
     { name: "Orders Today", value: completedToday.toString(), icon: ShoppingCart, color: "text-blue-600" },
     { name: "Avg Order Value", value: formatCurrency(Number(avgOrder._avg.total || 0)), icon: TrendingUp, color: "text-violet-600" },
-    { name: "Staff Members", value: store?._count.staff?.toString() || "0", icon: Users, color: "text-amber-600" },
+    { name: "Staff Members", value: store._count.staff.toString(), icon: Users, color: "text-amber-600" },
   ]
 
   const orderStats = [
@@ -149,15 +168,15 @@ export default async function DashboardPage() {
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <span className="text-sm text-muted-foreground">Total Orders</span>
-              <span className="font-bold">{store?._count.orders || 0}</span>
+              <span className="font-bold">{store._count.orders}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <span className="text-sm text-muted-foreground">Menu Items</span>
-              <span className="font-bold">{store?._count.menuItems || 0}</span>
+              <span className="font-bold">{store._count.menuItems}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <span className="text-sm text-muted-foreground">Active Staff</span>
-              <span className="font-bold">{store?._count.staff || 0}</span>
+              <span className="font-bold">{store._count.staff}</span>
             </div>
           </CardContent>
         </Card>

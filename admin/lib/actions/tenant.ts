@@ -91,22 +91,34 @@ export async function updateTenant(id: string, data: {
   plan?: string
   status?: string
 }) {
-  await prisma.tenant.update({ where: { id }, data })
-  revalidatePath("/tenants")
-  revalidatePath("/stores")
-  return { success: true }
+  try {
+    await prisma.tenant.update({ where: { id }, data })
+    revalidatePath("/tenants")
+    revalidatePath("/stores")
+    return { success: true }
+  } catch {
+    throw new Error("Tenant not found or update failed")
+  }
 }
 
 export async function updateTenantStatus(id: string, status: string) {
-  await prisma.tenant.update({ where: { id }, data: { status } })
-  revalidatePath("/tenants")
-  return { success: true }
+  try {
+    await prisma.tenant.update({ where: { id }, data: { status } })
+    revalidatePath("/tenants")
+    return { success: true }
+  } catch {
+    throw new Error("Tenant not found or update failed")
+  }
 }
 
 export async function deleteTenant(id: string) {
-  await prisma.tenant.delete({ where: { id } })
-  revalidatePath("/tenants")
-  revalidatePath("/stores")
-  revalidatePath("/dashboard")
-  return { success: true }
+  try {
+    await prisma.tenant.delete({ where: { id } })
+    revalidatePath("/tenants")
+    revalidatePath("/stores")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch {
+    throw new Error("Tenant not found or delete failed")
+  }
 }

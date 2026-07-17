@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { prisma } from "@ordora/shared/lib/prisma"
 import { MenuClient } from "./menu-client"
 
@@ -6,9 +7,10 @@ export const dynamic = "force-dynamic"
 
 export default async function MenuPage() {
   const session = await auth()
+  if (!session?.user) redirect("/login")
 
-  let tenantId = session?.user?.tenantId || null
-  if (!tenantId && session?.user?.id) {
+  let tenantId = session.user.tenantId
+  if (!tenantId) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { tenantId: true } })
     tenantId = user?.tenantId || null
   }
