@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
 
 declare module "next-auth" {
   interface Session {
@@ -28,6 +27,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null
 
         try {
+          const { default: bcrypt } = await import("bcryptjs")
           const { prisma } = await import("@ordora/shared/lib/prisma")
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
