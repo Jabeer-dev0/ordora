@@ -291,21 +291,21 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
             {/* 3 columns in a row */}
             <div className="flex flex-1 flex-wrap justify-between gap-10 sm:gap-16">
               <div>
-                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Explore</h3>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Explore</h3>
                 <ul className="space-y-2.5">
                   <li><Link href={`/${storeSlug}`} className="text-sm hover:text-white transition" style={{ color: "#d8cfc4" }}>Home</Link></li>
                   <li><Link href={`/${storeSlug}/menu`} className="text-sm hover:text-white transition" style={{ color: "#d8cfc4" }}>Order online</Link></li>
                 </ul>
               </div>
               <div>
-                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Legal</h3>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Legal</h3>
                 <ul className="space-y-2.5">
                   <li><Link href={`/${storeSlug}/terms`} className="text-sm hover:text-white transition" style={{ color: "#d8cfc4" }}>Terms &amp; Conditions</Link></li>
                   <li><Link href={`/${storeSlug}/privacy`} className="text-sm hover:text-white transition" style={{ color: "#d8cfc4" }}>Privacy Policy</Link></li>
                 </ul>
               </div>
               <div>
-                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Get in touch</h3>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Get in touch</h3>
                 <ul className="space-y-2.5">
                   {store!.phone && (
                     <li>
