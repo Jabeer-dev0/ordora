@@ -1,7 +1,11 @@
 import { execSync } from "child_process"
 import { rmSync, symlinkSync, existsSync } from "fs"
 
-const project = process.env.VERCEL_PROJECT_NAME
+const projectId = process.env.VERCEL_PROJECT_ID
+const projectName = process.env.VERCEL_PROJECT_NAME
+
+console.log(`VERCEL_PROJECT_ID: ${projectId}`)
+console.log(`VERCEL_PROJECT_NAME: ${projectName}`)
 
 function run(cmd) {
   console.log(`> ${cmd}`)
@@ -10,21 +14,25 @@ function run(cmd) {
 
 run("npx prisma generate")
 
-if (project === "ordora-app") {
-  console.log("Building ordora-app...")
-  run("cd app && npm run build")
-} else if (project === "ordora") {
-  console.log("Building ordora (admin)...")
-  run("cd admin && npm run build")
-} else {
-  console.log("Building storefront...")
-  run("cd storefront && npm run build")
+let target = "storefront"
+
+if (projectId === "prj_UYvjTDphSCIKwSJaw6H3dDDJiEXo") {
+  target = "app"
+} else if (projectId === "prj_elVl4LzVBnMX0U29RlXF9XMncPpr") {
+  target = "admin"
+} else if (projectId === "prj_fQVmd9LdDgAzxRQGaG9jWo1H6TQY") {
+  target = "storefront"
+} else if (projectName === "ordora-app") {
+  target = "app"
+} else if (projectName === "ordora") {
+  target = "admin"
 }
 
-// Symlink the correct .next output to root for Vercel
-const src = project === "ordora-app" ? "app/.next" : project === "ordora" ? "admin/.next" : "storefront/.next"
-if (existsSync(src)) {
+console.log(`Building target: ${target}`)
+run(`cd ${target} && npm run build`)
+
+if (existsSync(`${target}/.next`)) {
   try { rmSync(".next", { recursive: true, force: true }) } catch {}
-  symlinkSync(src, ".next")
-  console.log(`Symlinked ${src} -> .next`)
+  symlinkSync(`${target}/.next`, ".next")
+  console.log(`Symlinked ${target}/.next -> .next`)
 }
