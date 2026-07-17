@@ -701,45 +701,47 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
       {/* Footer */}
       <footer style={{ backgroundColor: "var(--theme-ink, #141414)" }} className="mt-auto">
         <div className="h-1" style={{ background: "linear-gradient(90deg, var(--brand, hsl(23,91%,54%)), var(--gold, #b8862f), var(--accent, hsl(207,90%,48%)))" }} />
-        <div className="max-w-[1600px] mx-auto px-6 py-16">
-          <div className="mb-10">
-            <img src={logoUrl || "/brands/chesters/chesters-logo.png"} alt={storeName} className="h-14 w-auto object-contain mb-3" />
-            <p className="text-sm text-white/40">Order online for collection or delivery</p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-12 mb-10">
-            <div>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Explore</h3>
-              <ul className="space-y-2.5">
-                <li><a href={`/${store.slug}`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Home</a></li>
-                <li><a href={`/${store.slug}/menu`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Order online</a></li>
-              </ul>
+        <div className="max-w-[1600px] mx-auto px-6 py-12">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-10 lg:gap-16 mb-10">
+            <div className="lg:w-[1.4fr] shrink-0">
+              <img src={logoUrl || "/brands/chesters/chesters-logo.png"} alt={storeName} className="h-14 w-auto object-contain mb-3" />
+              <p className="text-sm text-white/40">Order online for collection or delivery</p>
             </div>
-            <div>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Legal</h3>
-              <ul className="space-y-2.5">
-                <li><a href={`/${store.slug}/terms`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Terms &amp; Conditions</a></li>
-                <li><a href={`/${store.slug}/privacy`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Privacy Policy</a></li>
-              </ul>
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Get in touch</h3>
-              <ul className="space-y-2.5">
-                {store.phone && (
-                  <li>
-                    <a href={`tel:${store.phone}`} className="text-sm flex items-center gap-1 transition" style={{ color: "#d8cfc4" }}>
-                      {store.phone}<span className="text-xs text-white/30">Tap to call</span>
-                    </a>
-                  </li>
-                )}
-                {store.address && (
-                  <li>
-                    <a href={`https://maps.google.com/?q=${encodeURIComponent(store.address)}`} target="_blank" rel="noopener"
-                      className="text-sm flex items-center gap-1 transition" style={{ color: "#d8cfc4" }}>
-                      {storeAddress}<span className="text-xs text-white/30">Get directions</span>
-                    </a>
-                  </li>
-                )}
-              </ul>
+            <div className="flex flex-1 flex-wrap justify-between gap-10 sm:gap-16">
+              <div>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Explore</h3>
+                <ul className="space-y-2.5">
+                  <li><a href={`/${store.slug}`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Home</a></li>
+                  <li><a href={`/${store.slug}/menu`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Order online</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Legal</h3>
+                <ul className="space-y-2.5">
+                  <li><a href={`/${store.slug}/terms`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Terms &amp; Conditions</a></li>
+                  <li><a href={`/${store.slug}/privacy`} className="text-sm transition" style={{ color: "#d8cfc4" }}>Privacy Policy</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Get in touch</h3>
+                <ul className="space-y-2.5">
+                  {store.phone && (
+                    <li>
+                      <a href={`tel:${store.phone}`} className="text-sm flex flex-col gap-0.5 transition" style={{ color: "#d8cfc4" }}>
+                        {store.phone}<span className="text-xs text-white/30">Tap to call</span>
+                      </a>
+                    </li>
+                  )}
+                  {store.address && (
+                    <li>
+                      <a href={`https://maps.google.com/?q=${encodeURIComponent(store.address)}`} target="_blank" rel="noopener"
+                        className="text-sm flex flex-col gap-0.5 transition" style={{ color: "#d8cfc4" }}>
+                        {storeAddress}<span className="text-xs text-white/30">Get directions</span>
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.25rem" }}>
