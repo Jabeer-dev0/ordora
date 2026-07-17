@@ -289,7 +289,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
             </div>
 
             {/* 3 columns in a row */}
-            <div className="flex flex-1 flex-wrap gap-10 sm:gap-16">
+            <div className="flex flex-1 flex-wrap justify-between gap-10 sm:gap-16">
               <div>
                 <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white mb-4">Explore</h3>
                 <ul className="space-y-2.5">
