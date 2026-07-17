@@ -1,6 +1,0 @@
-{
-  "buildCommand": "node vercel-build.mjs",
-  "installCommand": "npm install",
-  "outputDirectory": ".next",
-  "framework": "nextjs"
-}
