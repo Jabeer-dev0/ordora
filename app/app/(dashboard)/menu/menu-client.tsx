@@ -23,7 +23,7 @@ import {
 } from "@/lib/actions/menu"
 import { formatCurrency } from "@ordora/shared/lib/utils"
 
-interface ModItem { id: string; name: string; price: number }
+interface ModItem { id: string; name: string; price: number; maxQuantity: number }
 interface ModGroup { id: string; name: string; required: boolean; minSelect: number; maxSelect: number; items: ModItem[] }
 interface MenuItem {
   id: string; name: string; description: string | null; price: number; category: string; isAvailable: boolean; imageUrl: string | null
@@ -114,12 +114,13 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
   const [fGroupMax, setFGroupMax] = useState("1")
   const [fModName, setFModName] = useState("")
   const [fModPrice, setFModPrice] = useState("")
+  const [fModMaxQty, setFModMaxQty] = useState("1")
   const [fNewCatName, setFNewCatName] = useState("")
 
   function reset() {
     setFName(""); setFDesc(""); setFPrice(""); setFCategory(""); setFModGroupIds([]); setFImageUrl(null)
     setFGroupName(""); setFGroupRequired(false); setFGroupMin("0"); setFGroupMax("1")
-    setFModName(""); setFModPrice("")
+    setFModName(""); setFModPrice(""); setFModMaxQty("1")
   }
 
   const catItems = items.filter(i => i.category === selectedCategory)
@@ -213,9 +214,9 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
   async function handleAddModifier() {
     if (!fModName.trim() || !editGroup) return
     try {
-      await addModifierToGroup(editGroup.id, { name: fModName.trim(), price: parseFloat(fModPrice) || 0 })
+      await addModifierToGroup(editGroup.id, { name: fModName.trim(), price: parseFloat(fModPrice) || 0, maxQuantity: parseInt(fModMaxQty) || 1 })
       toast.success("Option added")
-      setFModName(""); setFModPrice(""); setAddModItemOpen(false)
+      setFModName(""); setFModPrice(""); setFModMaxQty("1"); setAddModItemOpen(false)
       startTransition(() => router.refresh())
     } catch (e: any) {
       toast.error(e.message || "Failed to add option")
@@ -341,6 +342,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
                         <span>{mod.name}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground text-xs">{mod.price > 0 ? `+${formatCurrency(mod.price)}` : "Free"}</span>
+                          <span className="text-muted-foreground text-[10px]">×{mod.maxQuantity}</span>
                           <button onClick={() => handleDeleteModifier(mod.id)} className="text-destructive text-xs hover:underline">✕</button>
                         </div>
                       </div>
@@ -360,6 +362,7 @@ export function MenuClient({ items, modifierGroups }: { items: MenuItem[]; modif
             <div className="space-y-3">
               <div><Label>Name</Label><Input value={fModName} onChange={e => setFModName(e.target.value)} placeholder="e.g. Extra Cheese" /></div>
               <div><Label>Extra Price ($)</Label><Input type="number" step="0.01" value={fModPrice} onChange={e => setFModPrice(e.target.value)} placeholder="0" /></div>
+              <div><Label>Max Quantity</Label><Input type="number" min="1" max="50" value={fModMaxQty} onChange={e => setFModMaxQty(e.target.value)} placeholder="1" /><p className="text-[10px] text-muted-foreground mt-0.5">How many times this option can be selected (e.g. 5 for Extra Cheese x5)</p></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setAddModItemOpen(false)}>Cancel</Button>

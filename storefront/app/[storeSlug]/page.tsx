@@ -3,24 +3,11 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Phone, MapPin, Clock, ShoppingBag, Navigation, Truck } from "lucide-react"
 import { getStoreBySlug } from "@/lib/store"
+import { getStoreOpenStatus } from "@/lib/hours"
 
 export const revalidate = 60
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-
-function getOpenStatus(hours: { day: number; open: string; close: string; isActive: boolean }[]) {
-  const now = new Date()
-  const dayIndex = now.getDay()
-  const today = hours.find(h => h.day === dayIndex && h.isActive)
-  if (!today) return { isOpen: false, text: "Closed today", until: "" }
-  const [oh, om] = today.open.split(":").map(Number)
-  const [ch, cm] = today.close.split(":").map(Number)
-  const current = now.getHours() * 60 + now.getMinutes()
-  const openTime = oh * 60 + om
-  const closeTime = ch * 60 + cm
-  const isOpen = current >= openTime && current < closeTime
-  return { isOpen, text: isOpen ? "Open now" : "Closed", until: isOpen ? `until ${today.close}` : "" }
-}
 
 export default async function StorePage({ params }: { params: Promise<{ storeSlug: string }> }) {
   const { storeSlug } = await params
@@ -34,7 +21,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
     prisma.deliveryZone.findMany({ where: { storeId: store.id, isActive: true }, orderBy: { sortOrder: "asc" } }),
   ])
 
-  const hours = getOpenStatus(openingHours as any)
+  const hours = getStoreOpenStatus({ acceptingOrders: store.acceptingOrders, closedUntil: store.closedUntil }, openingHours as any)
   const collectionHours = openingHours.filter((h: any) => h.orderType === "COLLECTION")
   const deliveryHours = openingHours.filter((h: any) => h.orderType === "DELIVERY")
 

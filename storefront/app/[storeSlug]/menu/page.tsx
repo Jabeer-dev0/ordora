@@ -2,31 +2,9 @@ import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import MenuClient from "./menu-client"
 import { getStoreBySlug } from "@/lib/store"
+import { getStoreOpenStatus, formatHoursForType } from "@/lib/hours"
 
 export const revalidate = 30
-
-function getOpenStatus(hours: { day: number; open: string; close: string; isActive: boolean; orderType?: string }[], orderType?: string) {
-  const now = new Date()
-  const dayIndex = now.getDay()
-  const filtered = orderType ? hours.filter(h => h.orderType === orderType) : hours
-  const today = filtered.find(h => h.day === dayIndex && h.isActive)
-  if (!today) return { isOpen: false, text: "Closed today", until: "" }
-  const [oh, om] = today.open.split(":").map(Number)
-  const [ch, cm] = today.close.split(":").map(Number)
-  const current = now.getHours() * 60 + now.getMinutes()
-  const openTime = oh * 60 + om
-  const closeTime = ch * 60 + cm
-  const isOpen = current >= openTime && current < closeTime
-  return { isOpen, text: isOpen ? "Open now" : "Closed", until: isOpen ? `until ${today.close}` : "" }
-}
-
-function formatHoursForType(hours: { day: number; open: string; close: string; isActive: boolean; orderType: string }[], orderType: string): string {
-  const now = new Date()
-  const dayIndex = now.getDay()
-  const today = hours.find(h => h.day === dayIndex && h.isActive && h.orderType === orderType)
-  if (!today) return "Closed"
-  return `${today.open}–${today.close}`
-}
 
 export default async function MenuPage({ params }: { params: Promise<{ storeSlug: string }> }) {
   const { storeSlug } = await params
@@ -60,7 +38,7 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
     required: mg.required,
     minSelect: mg.minSelect,
     maxSelect: mg.maxSelect,
-    items: mg.items.map(m => ({ id: m.id, name: m.name, price: m.price })),
+    items: mg.items.map(m => ({ id: m.id, name: m.name, price: m.price, maxQuantity: m.maxQuantity })),
   }))
 
   const itemModLinks: Record<string, string[]> = {}
@@ -70,7 +48,7 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
   }
 
   const hours = openingHours as { day: number; open: string; close: string; isActive: boolean; orderType: string }[]
-  const overallStatus = getOpenStatus(hours)
+  const overallStatus = getStoreOpenStatus({ acceptingOrders: store.acceptingOrders, closedUntil: store.closedUntil }, hours)
 
   const storeData = {
     id: store.id,

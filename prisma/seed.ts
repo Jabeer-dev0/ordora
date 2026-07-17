@@ -43,47 +43,47 @@ async function main() {
   const sizeGroup = await prisma.modifierGroup.create({
     data: { storeId: store.id, name: "Size", required: true, minSelect: 1, maxSelect: 1, sortOrder: 0 },
   })
-  const sizeSmall = await prisma.modifier.create({ data: { modifierGroupId: sizeGroup.id, name: "Small", price: 0, sortOrder: 0 } })
-  const sizeMedium = await prisma.modifier.create({ data: { modifierGroupId: sizeGroup.id, name: "Medium", price: 2, sortOrder: 1 } })
-  const sizeLarge = await prisma.modifier.create({ data: { modifierGroupId: sizeGroup.id, name: "Large", price: 4, sortOrder: 2 } })
+  const sizeSmall = await prisma.modifier.create({ data: { modifierGroupId: sizeGroup.id, name: "Small", price: 0, sortOrder: 0, maxQuantity: 1 } })
+  const sizeMedium = await prisma.modifier.create({ data: { modifierGroupId: sizeGroup.id, name: "Medium", price: 2, sortOrder: 1, maxQuantity: 1 } })
+  const sizeLarge = await prisma.modifier.create({ data: { modifierGroupId: sizeGroup.id, name: "Large", price: 4, sortOrder: 2, maxQuantity: 1 } })
 
   const toppingsGroup = await prisma.modifierGroup.create({
     data: { storeId: store.id, name: "Extra Toppings", required: false, minSelect: 0, maxSelect: 5, sortOrder: 1 },
   })
-  const topCheese = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Extra Cheese", price: 1.5, sortOrder: 0 } })
-  const topMushroom = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Mushrooms", price: 1, sortOrder: 1 } })
-  const topPepper = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Peppers", price: 1, sortOrder: 2 } })
-  const topOnion = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Onions", price: 0.5, sortOrder: 3 } })
-  const topJalapeno = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Jalapeños", price: 1, sortOrder: 4 } })
+  const topCheese = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Extra Cheese", price: 1.5, sortOrder: 0, maxQuantity: 5 } })
+  const topMushroom = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Mushrooms", price: 1, sortOrder: 1, maxQuantity: 5 } })
+  const topPepper = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Peppers", price: 1, sortOrder: 2, maxQuantity: 5 } })
+  const topOnion = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Onions", price: 0.5, sortOrder: 3, maxQuantity: 5 } })
+  const topJalapeno = await prisma.modifier.create({ data: { modifierGroupId: toppingsGroup.id, name: "Jalapeños", price: 1, sortOrder: 4, maxQuantity: 5 } })
 
   const sidesGroup = await prisma.modifierGroup.create({
     data: { storeId: store.id, name: "Choose a Side", required: false, minSelect: 0, maxSelect: 2, sortOrder: 2 },
   })
-  const sideChips = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Chips", price: 0, sortOrder: 0 } })
-  const sideSalad = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Side Salad", price: 0, sortOrder: 1 } })
-  const sideRice = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Rice", price: 0, sortOrder: 2 } })
-  const sideColeslaw = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Coleslaw", price: 0.5, sortOrder: 3 } })
+  const sideChips = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Chips", price: 0, sortOrder: 0, maxQuantity: 1 } })
+  const sideSalad = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Side Salad", price: 0, sortOrder: 1, maxQuantity: 1 } })
+  const sideRice = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Rice", price: 0, sortOrder: 2, maxQuantity: 1 } })
+  const sideColeslaw = await prisma.modifier.create({ data: { modifierGroupId: sidesGroup.id, name: "Coleslaw", price: 0.5, sortOrder: 3, maxQuantity: 1 } })
 
   const sauceGroup = await prisma.modifierGroup.create({
     data: { storeId: store.id, name: "Sauce", required: false, minSelect: 0, maxSelect: 3, sortOrder: 3 },
   })
-  const sauceKetchup = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "Ketchup", price: 0, sortOrder: 0 } })
-  const sauceMayo = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "Mayo", price: 0, sortOrder: 1 } })
-  const sauceBBQ = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "BBQ Sauce", price: 0, sortOrder: 2 } })
-  const sauceHot = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "Hot Sauce", price: 0, sortOrder: 3 } })
+  const sauceKetchup = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "Ketchup", price: 0, sortOrder: 0, maxQuantity: 5 } })
+  const sauceMayo = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "Mayo", price: 0, sortOrder: 1, maxQuantity: 5 } })
+  const sauceBBQ = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "BBQ Sauce", price: 0, sortOrder: 2, maxQuantity: 5 } })
+  const sauceHot = await prisma.modifier.create({ data: { modifierGroupId: sauceGroup.id, name: "Hot Sauce", price: 0, sortOrder: 3, maxQuantity: 5 } })
 
   const drinkSize = await prisma.modifierGroup.create({
     data: { storeId: store.id, name: "Drink Size", required: true, minSelect: 1, maxSelect: 1, sortOrder: 0 },
   })
-  const dsSmall = await prisma.modifier.create({ data: { modifierGroupId: drinkSize.id, name: "Regular (330ml)", price: 0, sortOrder: 0 } })
-  const dsLarge = await prisma.modifier.create({ data: { modifierGroupId: drinkSize.id, name: "Large (500ml)", price: 1, sortOrder: 1 } })
+  const dsSmall = await prisma.modifier.create({ data: { modifierGroupId: drinkSize.id, name: "Regular (330ml)", price: 0, sortOrder: 0, maxQuantity: 1 } })
+  const dsLarge = await prisma.modifier.create({ data: { modifierGroupId: drinkSize.id, name: "Large (500ml)", price: 1, sortOrder: 1, maxQuantity: 1 } })
 
   const spiceLevel = await prisma.modifierGroup.create({
     data: { storeId: store.id, name: "Spice Level", required: true, minSelect: 1, maxSelect: 1, sortOrder: 0 },
   })
-  const slMild = await prisma.modifier.create({ data: { modifierGroupId: spiceLevel.id, name: "Mild", price: 0, sortOrder: 0 } })
-  const slMedium = await prisma.modifier.create({ data: { modifierGroupId: spiceLevel.id, name: "Medium", price: 0, sortOrder: 1 } })
-  const slHot = await prisma.modifier.create({ data: { modifierGroupId: spiceLevel.id, name: "Hot", price: 0, sortOrder: 2 } })
+  const slMild = await prisma.modifier.create({ data: { modifierGroupId: spiceLevel.id, name: "Mild", price: 0, sortOrder: 0, maxQuantity: 1 } })
+  const slMedium = await prisma.modifier.create({ data: { modifierGroupId: spiceLevel.id, name: "Medium", price: 0, sortOrder: 1, maxQuantity: 1 } })
+  const slHot = await prisma.modifier.create({ data: { modifierGroupId: spiceLevel.id, name: "Hot", price: 0, sortOrder: 2, maxQuantity: 1 } })
 
   // Create menu items
   const pizzaCategory = "Pizza"

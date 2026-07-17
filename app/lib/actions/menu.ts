@@ -97,11 +97,11 @@ export async function deleteModifierGroup(id: string) {
   return { success: true }
 }
 
-export async function addModifierToGroup(groupId: string, data: { name: string; price: number }) {
+export async function addModifierToGroup(groupId: string, data: { name: string; price: number; maxQuantity?: number }) {
   await getStoreForSession()
   const count = await prisma.modifier.count({ where: { modifierGroupId: groupId } })
   const mod = await prisma.modifier.create({
-    data: { modifierGroupId: groupId, name: data.name, price: data.price, sortOrder: count },
+    data: { modifierGroupId: groupId, name: data.name, price: data.price, sortOrder: count, maxQuantity: data.maxQuantity || 1 },
   })
   revalidatePath("/menu")
   revalidatePath("/epos")

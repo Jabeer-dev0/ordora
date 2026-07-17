@@ -176,6 +176,7 @@ model Modifier {
   price           Float    @default(0)
   isAvailable     Boolean  @default(true)
   sortOrder       Int      @default(0)
+  maxQuantity     Int      @default(1)
 
   orderItems OrderItemModifier[]
 

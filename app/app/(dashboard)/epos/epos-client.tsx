@@ -38,6 +38,7 @@ interface Modifier {
   name: string
   price: number
   isAvailable: boolean
+  maxQuantity: number
 }
 
 interface ModifierGroup {
@@ -182,18 +183,16 @@ export function EposClient({ menuItems }: { menuItems: MenuItem[] }) {
     setModifierSelections(initial)
   }
 
-  function handleModifierToggle(groupId: string, modifierId: string, group: ModifierGroup) {
+  function handleModifierToggle(groupId: string, modifierId: string, group: ModifierGroup, modMaxQty: number = 1) {
     setModifierSelections((prev) => {
       const current = prev[groupId] || {}
       const currentCount = current[modifierId] || 0
       const totalCount = Object.values(current).reduce((a, b) => a + b, 0)
 
-      // Single select (required, max=1): replace selection
-      if (group.required && group.maxSelect === 1) {
+      if (group.required && group.maxSelect === 1 && modMaxQty === 1) {
         return { ...prev, [groupId]: { [modifierId]: 1 } }
       }
 
-      // Already selected: remove one
       if (currentCount > 0) {
         const updated = { ...current }
         updated[modifierId] = currentCount - 1
@@ -201,10 +200,9 @@ export function EposClient({ menuItems }: { menuItems: MenuItem[] }) {
         return { ...prev, [groupId]: updated }
       }
 
-      // At max: don't add
       if (totalCount >= group.maxSelect) return prev
+      if (currentCount >= modMaxQty) return prev
 
-      // Add one more
       return { ...prev, [groupId]: { ...current, [modifierId]: currentCount + 1 } }
     })
   }
@@ -464,6 +462,7 @@ export function EposClient({ menuItems }: { menuItems: MenuItem[] }) {
                     <div className="space-y-1.5">
                       {group.items.map((mod) => {
                         const count = getModifierCount(group.id, mod.id)
+                        const atModMax = count >= mod.maxQuantity
                         return (
                           <div key={mod.id} className="flex items-center justify-between rounded-xl border-2 px-4 py-3 transition-all border-muted">
                             <span className="text-sm font-medium">{mod.name}</span>
@@ -473,7 +472,7 @@ export function EposClient({ menuItems }: { menuItems: MenuItem[] }) {
                               )}
                               <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => count > 0 && handleModifierToggle(group.id, mod.id, group)}
+                                  onClick={() => count > 0 && handleModifierToggle(group.id, mod.id, group, mod.maxQuantity)}
                                   disabled={count === 0}
                                   className="flex h-7 w-7 items-center justify-center rounded-lg border bg-muted text-sm font-bold transition hover:bg-destructive hover:text-white disabled:opacity-30"
                                 >
@@ -481,8 +480,8 @@ export function EposClient({ menuItems }: { menuItems: MenuItem[] }) {
                                 </button>
                                 <span className="w-7 text-center text-sm font-bold">{count}</span>
                                 <button
-                                  onClick={() => handleModifierToggle(group.id, mod.id, group)}
-                                  disabled={atMax && count === 0}
+                                  onClick={() => handleModifierToggle(group.id, mod.id, group, mod.maxQuantity)}
+                                  disabled={(atMax && count === 0) || atModMax}
                                   className="flex h-7 w-7 items-center justify-center rounded-lg border bg-muted text-sm font-bold transition hover:bg-[hsl(24,95%,53%)] hover:text-white disabled:opacity-30"
                                 >
                                   <Plus className="h-3 w-3" />

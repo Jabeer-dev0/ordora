@@ -11,7 +11,7 @@ import {
   AlertTriangle, MapPin, Phone, Clock, CreditCard, Banknote, Sparkles,
 } from "lucide-react"
 
-interface Modifier { id: string; name: string; price: number }
+interface Modifier { id: string; name: string; price: number; maxQuantity: number }
 interface ModifierGroup { id: string; name: string; required: boolean; minSelect: number; maxSelect: number; items: Modifier[] }
 interface MenuItemType { id: string; name: string; description: string; price: number; category: string; imageUrl: string | null; soldOut: boolean; isFeatured: boolean; allergens: string }
 interface CartItemModifier { modifierId: string; name: string; price: number }
@@ -110,18 +110,19 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
     setModifierSelections(initial)
   }
 
-  function handleModifierToggle(groupId: string, modifierId: string, group: ModifierGroup) {
+  function handleModifierToggle(groupId: string, modifierId: string, group: ModifierGroup, modMaxQty: number = 1) {
     setModifierSelections(prev => {
       const current = prev[groupId] || {}
       const currentCount = current[modifierId] || 0
       const totalCount = Object.values(current).reduce((a, b) => a + b, 0)
-      if (group.required && group.maxSelect === 1) return { ...prev, [groupId]: { [modifierId]: 1 } }
+      if (group.required && group.maxSelect === 1 && modMaxQty === 1) return { ...prev, [groupId]: { [modifierId]: 1 } }
       if (currentCount > 0) {
         const updated = { ...current }; updated[modifierId] = currentCount - 1
         if (updated[modifierId] === 0) delete updated[modifierId]
         return { ...prev, [groupId]: updated }
       }
       if (totalCount >= group.maxSelect) return prev
+      if (currentCount >= modMaxQty) return prev
       return { ...prev, [groupId]: { ...current, [modifierId]: currentCount + 1 } }
     })
   }
@@ -604,19 +605,20 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
                     <div className="space-y-1.5">
                       {group.items.map(mod => {
                         const count = getModifierCount(group.id, mod.id)
+                        const atModMax = count >= mod.maxQuantity
                         return (
                           <div key={mod.id} className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 transition ${count > 0 ? "border-blue-500 bg-blue-50" : "border-border"}`}>
                             <span className="text-sm font-medium text-foreground">{mod.name}</span>
                             <div className="flex items-center gap-2">
                               {mod.price > 0 && <span className="text-xs text-muted-foreground">+£{mod.price.toFixed(2)}</span>}
                               <div className="flex items-center gap-1">
-                                <button onClick={() => count > 0 && handleModifierToggle(group.id, mod.id, group)} disabled={count === 0}
+                                <button onClick={() => count > 0 && handleModifierToggle(group.id, mod.id, group, mod.maxQuantity)} disabled={count === 0}
                                   className="flex size-7 items-center justify-center rounded-lg border border-border bg-white text-foreground hover:bg-red-50 hover:text-red-500 disabled:opacity-30 transition">
                                   <Minus className="h-3 w-3" />
                                 </button>
                                 <span className="w-6 text-center text-sm font-bold">{count}</span>
-                                <button onClick={() => handleModifierToggle(group.id, mod.id, group)}
-                                  disabled={group.maxSelect > 0 && gc >= group.maxSelect && count === 0}
+                                <button onClick={() => handleModifierToggle(group.id, mod.id, group, mod.maxQuantity)}
+                                  disabled={(group.maxSelect > 0 && gc >= group.maxSelect && count === 0) || atModMax}
                                   className="flex size-7 items-center justify-center rounded-lg border border-border bg-white text-foreground hover:text-white disabled:opacity-30 transition"
                                   style={{ ["&:hover:not(:disabled)" as any]: { background: brandColor } }}>
                                   <Plus className="h-3 w-3" />
