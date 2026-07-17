@@ -1,4 +1,6 @@
 import type { Metadata } from "next"
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminTopbar } from "@/components/admin-topbar"
 
@@ -7,7 +9,11 @@ export const metadata: Metadata = {
   description: "Ordora Administration Panel",
 }
 
-export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth()
+  if (!session?.user) redirect("/login")
+  if (session.user.role !== "SUPER_ADMIN") redirect("/login")
+
   return (
     <div className="flex h-screen overflow-hidden">
       <AdminSidebar />

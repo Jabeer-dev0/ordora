@@ -14,53 +14,63 @@ export interface DeliveryZoneInput {
 }
 
 export async function getDeliveryZones(storeId: string) {
-  return prisma.deliveryZone.findMany({
-    where: { storeId },
-    orderBy: { sortOrder: "asc" },
-  })
+  try {
+    return prisma.deliveryZone.findMany({
+      where: { storeId },
+      orderBy: { sortOrder: "asc" },
+    })
+  } catch (error) {
+    console.error("getDeliveryZones error:", error)
+    throw new Error("Failed to fetch delivery zones")
+  }
 }
 
 export async function upsertDeliveryZones(storeId: string, zones: DeliveryZoneInput[]) {
-  const existing = await prisma.deliveryZone.findMany({ where: { storeId } })
+  try {
+    const existing = await prisma.deliveryZone.findMany({ where: { storeId } })
 
-  for (const zone of zones) {
-    const match = existing.find(e => e.postcodePattern === zone.postcodePattern)
-    if (match) {
-      await prisma.deliveryZone.update({
-        where: { id: match.id },
-        data: {
-          label: zone.label,
-          deliveryFee: zone.deliveryFee,
-          minimumOrder: zone.minimumOrder,
-          estimatedMins: zone.estimatedMins,
-          isActive: zone.isActive,
-          sortOrder: zone.sortOrder,
-        },
-      })
-    } else {
-      await prisma.deliveryZone.create({
-        data: {
-          storeId,
-          postcodePattern: zone.postcodePattern,
-          label: zone.label,
-          deliveryFee: zone.deliveryFee,
-          minimumOrder: zone.minimumOrder,
-          estimatedMins: zone.estimatedMins,
-          isActive: zone.isActive,
-          sortOrder: zone.sortOrder,
-        },
-      })
+    for (const zone of zones) {
+      const match = existing.find(e => e.postcodePattern === zone.postcodePattern)
+      if (match) {
+        await prisma.deliveryZone.update({
+          where: { id: match.id },
+          data: {
+            label: zone.label,
+            deliveryFee: zone.deliveryFee,
+            minimumOrder: zone.minimumOrder,
+            estimatedMins: zone.estimatedMins,
+            isActive: zone.isActive,
+            sortOrder: zone.sortOrder,
+          },
+        })
+      } else {
+        await prisma.deliveryZone.create({
+          data: {
+            storeId,
+            postcodePattern: zone.postcodePattern,
+            label: zone.label,
+            deliveryFee: zone.deliveryFee,
+            minimumOrder: zone.minimumOrder,
+            estimatedMins: zone.estimatedMins,
+            isActive: zone.isActive,
+            sortOrder: zone.sortOrder,
+          },
+        })
+      }
     }
-  }
 
-  const incomingPatterns = zones.map(z => z.postcodePattern)
-  const toDelete = existing.filter(e => !incomingPatterns.includes(e.postcodePattern))
-  if (toDelete.length > 0) {
-    await prisma.deliveryZone.deleteMany({ where: { id: { in: toDelete.map(e => e.id) } } })
-  }
+    const incomingPatterns = zones.map(z => z.postcodePattern)
+    const toDelete = existing.filter(e => !incomingPatterns.includes(e.postcodePattern))
+    if (toDelete.length > 0) {
+      await prisma.deliveryZone.deleteMany({ where: { id: { in: toDelete.map(e => e.id) } } })
+    }
 
-  revalidatePath("/stores")
-  return { success: true }
+    revalidatePath("/stores")
+    return { success: true }
+  } catch (error) {
+    console.error("upsertDeliveryZones error:", error)
+    throw new Error("Failed to update delivery zones")
+  }
 }
 
 export async function deleteDeliveryZone(id: string) {
@@ -68,7 +78,8 @@ export async function deleteDeliveryZone(id: string) {
     await prisma.deliveryZone.delete({ where: { id } })
     revalidatePath("/stores")
     return { success: true }
-  } catch {
+  } catch (error) {
+    console.error("deleteDeliveryZone error:", error)
     throw new Error("Delivery zone not found or delete failed")
   }
 }

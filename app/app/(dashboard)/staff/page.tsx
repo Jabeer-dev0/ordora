@@ -3,6 +3,8 @@ import { redirect } from "next/navigation"
 import { prisma } from "@ordora/shared/lib/prisma"
 import { StaffClient } from "./staff-client"
 
+export const dynamic = "force-dynamic"
+
 export default async function StaffPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")

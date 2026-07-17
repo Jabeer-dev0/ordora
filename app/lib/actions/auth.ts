@@ -63,10 +63,21 @@ export async function registerUser(data: {
       },
     })
 
+    let storeSlug = data.storeName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+
+    const existingSlug = await prisma.store.findUnique({ where: { slug: storeSlug } })
+    if (existingSlug) {
+      storeSlug = `${storeSlug}-${Date.now()}`
+    }
+
     await prisma.store.create({
       data: {
         tenantId: tenant.id,
         name: data.storeName,
+        slug: storeSlug,
       },
     })
 

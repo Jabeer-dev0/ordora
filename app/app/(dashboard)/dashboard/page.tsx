@@ -6,6 +6,8 @@ import { Badge } from "@ordora/shared/components/ui/badge"
 import { DollarSign, ShoppingCart, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react"
 import { formatCurrency } from "@ordora/shared/lib/utils"
 
+export const dynamic = "force-dynamic"
+
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
