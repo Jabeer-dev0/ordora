@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  plan      String   @default("FREE")
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores        Store[]
+  users         User[]
+  subscriptions Subscription[]
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String   @unique @default("main-store")
+  address   String?
+  phone     String?
+  postcode  String?
+  timezone  String   @default("Europe/London")
+  isActive  Boolean  @default(true)
+
+  description String?
+
+  acceptingOrders Boolean  @default(true)
+  closedUntil     DateTime?
+
+  deliveryEnabled  Boolean @default(true)
+  collectionEnabled Boolean @default(true)
+  minimumOrderAmount Int   @default(0)
+  deliveryFee      Int     @default(0)
+  estimatedPrepTime Int    @default(15)
+  website          String?
+
+  webServiceCharge Int @default(0)
+  bagCharge        Int @default(0)
+
+  brandColor   String?
+  accentColor  String?
+  tagline      String?
+  heroImageUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menuItems       MenuItem[]
+  orders          Order[]
+  staff           Staff[]
+  modifierGroups  ModifierGroup[]
+  banners         Banner[]
+  openingHours    StoreOpeningHour[]
+  deliveryZones   DeliveryZone[]
+
+  @@index([tenantId])
+  @@index([slug])
+}
+
+model DeliveryZone {
+  id              String  @id @default(cuid())
+  storeId         String
+  store           Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  postcodePattern String
+  label           String
+  deliveryFee     Int     @default(0)
+  minimumOrder    Int     @default(0)
+  estimatedMins   Int     @default(30)
+  isActive        Boolean @default(true)
+  sortOrder       Int     @default(0)
+
+  @@index([storeId])
+}
+
+model StoreOpeningHour {
+  id        String  @id @default(cuid())
+  storeId   String
+  store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderType String  @default("STORE")
+  day       Int
+  open      String
+  close     String
+  isActive  Boolean @default(true)
+
+  @@unique([storeId, orderType, day])
+}
+
+model Banner {
+  id        String  @id @default(cuid())
+  storeId   String
+  store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  title     String
+  subtitle  String?
+  imageUrl  String?
+  ctaLabel  String?
+  ctaUrl    String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model User {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("OWNER")
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([tenantId])
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  price       Float
+  category    String
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  soldOut     Boolean  @default(false)
+  allergens   String   @default("")
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems     OrderItem[]
+  modifierGroups MenuItemModifierGroup[]
+
+  @@index([storeId])
+  @@index([category])
+}
+
+model ModifierGroup {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name        String
+  required    Boolean  @default(false)
+  minSelect   Int      @default(0)
+  maxSelect   Int      @default(1)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  items     Modifier[]
+  menuItems MenuItemModifierGroup[]
+
+  @@index([storeId])
+}
+
+model Modifier {
+  id              String   @id @default(cuid())
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  name            String
+  price           Float    @default(0)
+  isAvailable     Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  maxQuantity     Int      @default(1)
+
+  orderItems OrderItemModifier[]
+
+  @@index([modifierGroupId])
+}
+
+model MenuItemModifierGroup {
+  id              String   @id @default(cuid())
+  menuItemId      String
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  sortOrder       Int      @default(0)
+
+  @@unique([menuItemId, modifierGroupId])
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName  String?
+  customerPhone String?
+  customerEmail String?
+  status        String   @default("PENDING")
+  source        String   @default("TILL")
+  orderType     String   @default("DINE_IN")
+  paymentMethod String   @default("cash")
+  subtotal      Float
+  discount      Float    @default(0)
+  tax           Float    @default(0)
+  total         Float
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([storeId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  quantity   Int     @default(1)
+  unitPrice  Float
+  total      Float
+  notes      String?
+
+  modifiers OrderItemModifier[]
+
+  @@index([orderId])
+}
+
+model OrderItemModifier {
+  id         String  @id @default(cuid())
+  orderItemId String
+  orderItem  OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  modifierId String
+  modifier   Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+  price      Float    @default(0)
+}
+
+model Staff {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  role      String
+  email     String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan      String
+  status    String   @default("active")
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+}
