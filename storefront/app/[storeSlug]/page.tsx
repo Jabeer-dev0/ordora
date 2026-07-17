@@ -307,21 +307,21 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
               <div>
                 <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Get in touch</h3>
                 <ul className="space-y-2.5">
-                  {store!.phone && (
-                    <li>
-                      <a href={`tel:${store!.phone}`} className="text-sm hover:text-white transition flex items-center gap-1" style={{ color: "#d8cfc4" }}>
-                        {store!.phone}<span className="text-xs text-white/30">Tap to call</span>
-                      </a>
-                    </li>
-                  )}
-                  {store!.address && (
-                    <li>
-                      <a href={`https://maps.google.com/?q=${encodeURIComponent(store!.address)}`} target="_blank" rel="noopener"
-                        className="text-sm hover:text-white transition flex items-center gap-1" style={{ color: "#d8cfc4" }}>
-                        {storeAddress}<span className="text-xs text-white/30">Get directions</span>
-                      </a>
-                    </li>
-                  )}
+                {store!.phone && (
+                  <li>
+                    <a href={`tel:${store!.phone}`} className="text-sm hover:text-white transition flex flex-col gap-0.5" style={{ color: "#d8cfc4" }}>
+                      {store!.phone}<span className="text-xs text-white/30">Tap to call</span>
+                    </a>
+                  </li>
+                )}
+                {store!.address && (
+                  <li>
+                    <a href={`https://maps.google.com/?q=${encodeURIComponent(store!.address)}`} target="_blank" rel="noopener"
+                      className="text-sm hover:text-white transition flex flex-col gap-0.5" style={{ color: "#d8cfc4" }}>
+                      {storeAddress}<span className="text-xs text-white/30">Get directions</span>
+                    </a>
+                  </li>
+                )}
                 </ul>
               </div>
             </div>
