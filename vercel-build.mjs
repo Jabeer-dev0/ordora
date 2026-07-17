@@ -1,5 +1,5 @@
 import { execSync } from "child_process"
-import { rmSync, symlinkSync, existsSync } from "fs"
+import { rmSync, renameSync, existsSync } from "fs"
 
 const projectId = process.env.VERCEL_PROJECT_ID
 const projectName = process.env.VERCEL_PROJECT_NAME
@@ -33,6 +33,6 @@ run(`cd ${target} && npm run build`)
 
 if (existsSync(`${target}/.next`)) {
   try { rmSync(".next", { recursive: true, force: true }) } catch {}
-  symlinkSync(`${target}/.next`, ".next")
-  console.log(`Symlinked ${target}/.next -> .next`)
+  renameSync(`${target}/.next`, ".next")
+  console.log(`Moved ${target}/.next -> .next`)
 }
