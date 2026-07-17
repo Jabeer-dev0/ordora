@@ -15,3 +15,11 @@ prisma/dev.db-journal
 
 .vercel
 .env*
+
+# Junk / temp files
+check-db.ts
+check-hours.js
+fix-chesters.ts
+WhatsApp_Image_*.png
+project-bolt-*
+shared/public/ordora-logo.jpg
