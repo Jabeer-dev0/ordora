@@ -1,30 +1,23 @@
-import { auth } from "@/lib/auth"
-import { NextResponse } from "next/server"
-
-export default auth((req) => {
-  const { pathname } = req.nextUrl
-  
-  // Allow public routes
-  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth")) {
-    return NextResponse.next()
-  }
-  
-  // Redirect to login if not authenticated
-  if (!req.auth) {
-    const loginUrl = new URL("/login", req.nextUrl.origin)
-    return NextResponse.redirect(loginUrl)
-  }
-  
-  // Check for SUPER_ADMIN role
-  const session = req.auth
-  if (session?.user?.role !== "SUPER_ADMIN") {
-    const loginUrl = new URL("/login", req.nextUrl.origin)
-    return NextResponse.redirect(loginUrl)
-  }
-  
-  return NextResponse.next()
-})
+import { NextResponse, NextRequest } from "next/server"
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|public/).*)"],
+}
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  if (pathname.startsWith("/login")) {
+    return NextResponse.next()
+  }
+
+  const token = req.cookies.get("next-auth.session-token")?.value
+    || req.cookies.get("__Secure-next-auth.session-token")?.value
+
+  if (!token) {
+    const loginUrl = new URL("/login", req.nextUrl.origin)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
 }
