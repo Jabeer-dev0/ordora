@@ -26,7 +26,7 @@ interface StoreData {
   deliveryEnabled: boolean; collectionEnabled: boolean; minimumOrderAmount: number; deliveryFee: number; estimatedPrepTime: number
   acceptingOrders: boolean; isActive: boolean
   tenant: { name: string; id: string; slug: string } | null
-  openingHours: { id: string; day: number; open: string; close: string; isActive: boolean }[]
+  openingHours: { id: string; day: number; open: string; close: string; isActive: boolean; orderType: string }[]
   deliveryZones: { id: string; postcodePattern: string; label: string; deliveryFee: number; minimumOrder: number; estimatedMins: number; isActive: boolean; sortOrder: number }[]
 }
 
@@ -51,12 +51,27 @@ export function StoreSettingsClient({ store }: { store: StoreData }) {
   const [tagline, setTagline] = useState(store.tagline || "")
   const [heroImageUrl, setHeroImageUrl] = useState(store.heroImageUrl || "")
 
-  // Opening Hours
-  const defaultHours = Array.from({ length: 7 }, (_, i) => {
-    const existing = store.openingHours.find(h => h.day === i)
+  // Opening Hours — Collection
+  const defaultCollectionHours = Array.from({ length: 7 }, (_, i) => {
+    const existing = store.openingHours.find((h: any) => h.day === i && h.orderType === "COLLECTION")
     return { day: i, open: existing?.open || "09:00", close: existing?.close || "22:00", isActive: existing?.isActive ?? (i === 0 ? false : true) }
   })
-  const [hours, setHours] = useState(defaultHours)
+  const [collectionHours, setCollectionHours] = useState(defaultCollectionHours)
+
+  // Opening Hours — Delivery
+  const defaultDeliveryHours = Array.from({ length: 7 }, (_, i) => {
+    const existing = store.openingHours.find((h: any) => h.day === i && h.orderType === "DELIVERY")
+    return { day: i, open: existing?.open || "09:00", close: existing?.close || "22:00", isActive: existing?.isActive ?? (i === 0 ? false : true) }
+  })
+  const [deliveryHours, setDeliveryHours] = useState(defaultDeliveryHours)
+
+  // Opening Hours — single (when only one mode)
+  const defaultSingleHours = Array.from({ length: 7 }, (_, i) => {
+    const existing = store.openingHours.find((h: any) => h.day === i && (h.orderType === "COLLECTION" || h.orderType === "DELIVERY"))
+    return { day: i, open: existing?.open || "09:00", close: existing?.close || "22:00", isActive: existing?.isActive ?? (i === 0 ? false : true) }
+  })
+  const [singleHours, setSingleHours] = useState(defaultSingleHours)
+  const [hoursTab, setHoursTab] = useState("collection")
 
   // Delivery
   const [deliveryEnabled, setDeliveryEnabled] = useState(store.deliveryEnabled)
@@ -96,12 +111,29 @@ export function StoreSettingsClient({ store }: { store: StoreData }) {
     } catch (e: any) { toast.error(e.message || "Failed") }
   }
 
-  async function saveHours() {
+  async function saveCollectionHours() {
     try {
-      await upsertOpeningHours(store.id, hours)
+      await upsertOpeningHours(store.id, collectionHours, "COLLECTION")
+      toast.success("Collection hours saved")
+    } catch (e: any) { toast.error(e.message || "Failed") }
+  }
+
+  async function saveDeliveryHours() {
+    try {
+      await upsertOpeningHours(store.id, deliveryHours, "DELIVERY")
+      toast.success("Delivery hours saved")
+    } catch (e: any) { toast.error(e.message || "Failed") }
+  }
+
+  async function saveSingleHours() {
+    try {
+      const orderType = collectionEnabled ? "COLLECTION" : "DELIVERY"
+      await upsertOpeningHours(store.id, singleHours, orderType)
       toast.success("Opening hours saved")
     } catch (e: any) { toast.error(e.message || "Failed") }
   }
+
+  const bothEnabled = deliveryEnabled && collectionEnabled
 
   async function saveDelivery() {
     try {
@@ -132,8 +164,16 @@ export function StoreSettingsClient({ store }: { store: StoreData }) {
     } catch (e: any) { toast.error(e.message || "Failed") }
   }
 
-  function updateHour(day: number, field: "open" | "close" | "isActive", value: string | boolean) {
-    setHours(prev => prev.map(h => h.day === day ? { ...h, [field]: value } : h))
+  function updateCollectionHour(day: number, field: "open" | "close" | "isActive", value: string | boolean) {
+    setCollectionHours(prev => prev.map(h => h.day === day ? { ...h, [field]: value } : h))
+  }
+
+  function updateDeliveryHour(day: number, field: "open" | "close" | "isActive", value: string | boolean) {
+    setDeliveryHours(prev => prev.map(h => h.day === day ? { ...h, [field]: value } : h))
+  }
+
+  function updateSingleHour(day: number, field: "open" | "close" | "isActive", value: string | boolean) {
+    setSingleHours(prev => prev.map(h => h.day === day ? { ...h, [field]: value } : h))
   }
 
   function addZone() {
@@ -208,31 +248,113 @@ export function StoreSettingsClient({ store }: { store: StoreData }) {
         {/* OPENING HOURS TAB */}
         <TabsContent value="hours">
           <Card>
-            <CardHeader><CardTitle>Opening Hours</CardTitle><CardDescription>Set opening and closing times for each day. Toggle off to mark as closed.</CardDescription></CardHeader>
+            <CardHeader>
+              <CardTitle>{bothEnabled ? "Opening Hours" : "Opening Hours"}</CardTitle>
+              <CardDescription>
+                {bothEnabled
+                  ? "Set separate hours for Collection and Delivery. Both tabs save independently."
+                  : "Set opening and closing times for each day. Toggle off to mark as closed."}
+              </CardDescription>
+            </CardHeader>
             <CardContent className="space-y-3">
-              {hours.map((h, i) => (
-                <div key={h.day} className={`flex items-center gap-4 p-3 rounded-lg border ${h.isActive ? "bg-white" : "bg-muted/50"}`}>
-                  <div className="w-24 font-medium text-sm">{DAYS[h.day]}</div>
-                  <label className="flex items-center gap-2 cursor-pointer w-20">
-                    <input type="checkbox" checked={h.isActive} onChange={e => updateHour(h.day, "isActive", e.target.checked)} className="w-4 h-4 rounded" />
-                    <span className="text-sm">{h.isActive ? "Open" : "Closed"}</span>
-                  </label>
-                  {h.isActive && (
-                    <>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Open</Label>
-                        <Input type="time" value={h.open} onChange={e => updateHour(h.day, "open", e.target.value)} className="w-32" />
-                      </div>
-                      <span className="text-muted-foreground mt-4">to</span>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Close</Label>
-                        <Input type="time" value={h.close} onChange={e => updateHour(h.day, "close", e.target.value)} className="w-32" />
-                      </div>
-                    </>
-                  )}
+              {bothEnabled && (
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setHoursTab("collection")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${hoursTab === "collection" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                  >
+                    🛍️ Collection Hours
+                  </button>
+                  <button
+                    onClick={() => setHoursTab("delivery")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${hoursTab === "delivery" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                  >
+                    🚗 Delivery Hours
+                  </button>
                 </div>
-              ))}
-              <div className="pt-3"><Button onClick={saveHours} disabled={isPending}><Save className="h-4 w-4 mr-1.5" /> Save Opening Hours</Button></div>
+              )}
+
+              {/* Collection Hours */}
+              {(!bothEnabled || hoursTab === "collection") && (
+                <div className="space-y-3">
+                  {bothEnabled && <p className="text-sm font-medium text-foreground">Collection Hours</p>}
+                  {(bothEnabled ? collectionHours : singleHours).map((h) => (
+                    <div key={h.day} className={`flex items-center gap-4 p-3 rounded-lg border ${h.isActive ? "bg-white" : "bg-muted/50"}`}>
+                      <div className="w-24 font-medium text-sm text-foreground">{DAYS[h.day]}</div>
+                      <label className="flex items-center gap-2 cursor-pointer w-20">
+                        <input
+                          type="checkbox" checked={h.isActive}
+                          onChange={e => bothEnabled
+                            ? updateCollectionHour(h.day, "isActive", e.target.checked)
+                            : updateSingleHour(h.day, "isActive", e.target.checked)}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm text-foreground">{h.isActive ? "Open" : "Closed"}</span>
+                      </label>
+                      {h.isActive && (
+                        <>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Open</Label>
+                            <Input type="time" value={h.open}
+                              onChange={e => bothEnabled
+                                ? updateCollectionHour(h.day, "open", e.target.value)
+                                : updateSingleHour(h.day, "open", e.target.value)}
+                              className="w-32" />
+                          </div>
+                          <span className="text-muted-foreground mt-4">to</span>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Close</Label>
+                            <Input type="time" value={h.close}
+                              onChange={e => bothEnabled
+                                ? updateCollectionHour(h.day, "close", e.target.value)
+                                : updateSingleHour(h.day, "close", e.target.value)}
+                              className="w-32" />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  <div className="pt-3">
+                    <Button onClick={bothEnabled ? saveCollectionHours : saveSingleHours} disabled={isPending}>
+                      <Save className="h-4 w-4 mr-1.5" /> Save {bothEnabled ? "Collection" : "Opening"} Hours
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Delivery Hours */}
+              {bothEnabled && hoursTab === "delivery" && (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">Delivery Hours</p>
+                  {deliveryHours.map((h) => (
+                    <div key={h.day} className={`flex items-center gap-4 p-3 rounded-lg border ${h.isActive ? "bg-white" : "bg-muted/50"}`}>
+                      <div className="w-24 font-medium text-sm text-foreground">{DAYS[h.day]}</div>
+                      <label className="flex items-center gap-2 cursor-pointer w-20">
+                        <input type="checkbox" checked={h.isActive} onChange={e => updateDeliveryHour(h.day, "isActive", e.target.checked)} className="w-4 h-4 rounded" />
+                        <span className="text-sm text-foreground">{h.isActive ? "Open" : "Closed"}</span>
+                      </label>
+                      {h.isActive && (
+                        <>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Open</Label>
+                            <Input type="time" value={h.open} onChange={e => updateDeliveryHour(h.day, "open", e.target.value)} className="w-32" />
+                          </div>
+                          <span className="text-muted-foreground mt-4">to</span>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Close</Label>
+                            <Input type="time" value={h.close} onChange={e => updateDeliveryHour(h.day, "close", e.target.value)} className="w-32" />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  <div className="pt-3">
+                    <Button onClick={saveDeliveryHours} disabled={isPending}>
+                      <Save className="h-4 w-4 mr-1.5" /> Save Delivery Hours
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
