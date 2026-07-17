@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "npx prisma generate && cd admin && next build",
+  "outputDirectory": "admin/.next",
+  "framework": "nextjs"
+}
