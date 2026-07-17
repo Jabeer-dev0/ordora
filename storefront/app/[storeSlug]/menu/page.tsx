@@ -59,6 +59,7 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
     postcode: store.postcode,
     webServiceCharge: store.webServiceCharge,
     bagCharge: store.bagCharge,
+    deliveryFee: store.deliveryFee,
     logoUrl: store.tenant?.logoUrl || null,
     brandColor: store.brandColor || null,
     accentColor: store.accentColor || null,

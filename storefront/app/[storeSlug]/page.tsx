@@ -332,7 +332,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
 
           {/* Powered by Ordora */}
           <div className="mt-6 pt-5 flex flex-col items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-            <span className="text-sm text-white/30">Powered by <span className="font-bold" style={{ color: "var(--red, #e31e24)" }}>Ordora</span></span>
+            <span className="text-sm text-white/30">Powered by <span className="font-bold" style={{ color: "var(--brand)" }}>Ordora</span></span>
           </div>
         </div>
       </footer>

@@ -23,16 +23,17 @@ export async function getOpeningHours(storeId: string) {
   }
 }
 
-export async function upsertOpeningHours(storeId: string, hours: OpeningHourInput[]) {
+export async function upsertOpeningHours(storeId: string, hours: OpeningHourInput[], orderType: string = "COLLECTION") {
   try {
     for (const h of hours) {
       await prisma.storeOpeningHour.upsert({
-        where: { storeId_orderType_day: { storeId, orderType: "STORE", day: h.day } },
+        where: { storeId_orderType_day: { storeId, orderType, day: h.day } },
         update: { open: h.open, close: h.close, isActive: h.isActive },
-        create: { storeId, orderType: "STORE", day: h.day, open: h.open, close: h.close, isActive: h.isActive },
+        create: { storeId, orderType, day: h.day, open: h.open, close: h.close, isActive: h.isActive },
       })
     }
     revalidatePath("/stores")
+    revalidatePath("/")
     return { success: true }
   } catch (error) {
     console.error("upsertOpeningHours error:", error)
@@ -54,7 +55,8 @@ export async function initializeOpeningHours(storeId: string) {
       { day: 5, open: "09:00", close: "22:00", isActive: true },
       { day: 6, open: "09:00", close: "22:00", isActive: true },
     ]
-    await upsertOpeningHours(storeId, defaultHours)
+    await upsertOpeningHours(storeId, defaultHours, "COLLECTION")
+    await upsertOpeningHours(storeId, defaultHours, "DELIVERY")
     return { success: true }
   } catch (error) {
     console.error("initializeOpeningHours error:", error)
