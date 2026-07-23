@@ -194,6 +194,19 @@ model MenuItemModifierGroup {
   @@unique([menuItemId, modifierGroupId])
 }
 
+// Conditional / dependent modifier: when a Modifier option is selected, the
+// linked child ModifierGroup is shown (e.g. size 12" -> "12" extra toppings").
+model ModifierChildGroup {
+  id              String   @id @default(cuid())
+  modifierId      String
+  modifier        Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+  childGroupId    String
+  childGroup      ModifierGroup @relation(fields: [childGroupId], references: [id], onDelete: Cascade)
+  sortOrder       Int      @default(0)
+
+  @@unique([modifierId, childGroupId])
+}
+
 model Order {
   id            String   @id @default(cuid())
   storeId       String

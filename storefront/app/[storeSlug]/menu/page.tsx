@@ -1,8 +1,8 @@
-import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import MenuClient from "./menu-client"
 import { getStoreBySlug } from "@/lib/store"
 import { getStoreOpenStatus, formatHoursForType } from "@/lib/hours"
+import { storefrontApi } from "@/lib/api"
 
 export const revalidate = 30
 
@@ -11,41 +11,60 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
   const store = await getStoreBySlug(storeSlug)
   if (!store || !store.isActive) notFound()
 
-  const [menuItemsRaw, modifierGroupsRaw, itemModGroups, openingHours] = await Promise.all([
-    prisma.menuItem.findMany({ where: { storeId: store.id, isAvailable: true }, orderBy: [{ category: "asc" }, { sortOrder: "asc" }] }),
-    prisma.modifierGroup.findMany({ where: { storeId: store.id }, include: { items: { where: { isAvailable: true }, orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } }),
-    prisma.menuItemModifierGroup.findMany({ where: { menuItem: { storeId: store.id } } }),
-    prisma.storeOpeningHour.findMany({ where: { storeId: store.id }, orderBy: { day: "asc" } }),
-  ])
-
-  const menuItems = menuItemsRaw.map(item => ({
-    id: item.id,
-    name: item.name,
-    description: item.description || "",
-    price: item.price,
-    category: item.category,
-    imageUrl: item.imageUrl,
-    soldOut: item.soldOut,
-    isFeatured: item.isFeatured,
-    allergens: item.allergens,
-  }))
-
-  const categories = [...new Set(menuItems.map(i => i.category))]
-
-  const modifierGroups = modifierGroupsRaw.map(mg => ({
-    id: mg.id,
-    name: mg.name,
-    required: mg.required,
-    minSelect: mg.minSelect,
-    maxSelect: mg.maxSelect,
-    items: mg.items.map(m => ({ id: m.id, name: m.name, price: m.price, maxQuantity: m.maxQuantity })),
-  }))
-
-  const itemModLinks: Record<string, string[]> = {}
-  for (const link of itemModGroups) {
-    if (!itemModLinks[link.menuItemId]) itemModLinks[link.menuItemId] = []
-    itemModLinks[link.menuItemId].push(link.modifierGroupId)
+  let menuData: any = { categories: [] }
+  let openingHours: any[] = []
+  try {
+    const [m, h] = await Promise.all([
+      storefrontApi.menu(storeSlug),
+      storefrontApi.openingHours(storeSlug),
+    ])
+    menuData = m
+    openingHours = h.openingHours || []
+  } catch {
+    notFound()
   }
+
+  const categories = (menuData.categories || []).map((c: any) => c.name)
+
+  // Flatten modifier groups + build item→group links from nested API response.
+  const modifierGroups: any[] = []
+  const itemModLinks: Record<string, string[]> = {}
+  for (const cat of menuData.categories || []) {
+    for (const item of cat.items || []) {
+      const links: string[] = []
+      for (const g of item.groups || []) {
+        modifierGroups.push({
+          id: g.id,
+          name: g.name,
+          required: g.required,
+          minSelect: g.minSelect,
+          maxSelect: g.maxSelect,
+          items: (g.modifiers || []).map((mod: any) => ({
+            id: mod.id,
+            name: mod.name,
+            price: mod.price,
+            maxQuantity: 1,
+          })),
+        })
+        links.push(g.id)
+      }
+      itemModLinks[item.id] = links
+    }
+  }
+
+  const menuItems = (menuData.categories || []).flatMap((c: any) =>
+    (c.items || []).map((i: any) => ({
+      id: i.id,
+      name: i.name,
+      description: i.description || "",
+      price: i.price,
+      category: i.category,
+      imageUrl: i.imageUrl,
+      soldOut: false,
+      isFeatured: i.isFeatured,
+      allergens: "",
+    }))
+  )
 
   const hours = openingHours as { day: number; open: string; close: string; isActive: boolean; orderType: string }[]
   const overallStatus = getStoreOpenStatus({ acceptingOrders: store.acceptingOrders, closedUntil: store.closedUntil }, hours)
@@ -57,9 +76,9 @@ export default async function MenuPage({ params }: { params: Promise<{ storeSlug
     phone: store.phone,
     address: store.address,
     postcode: store.postcode,
-    webServiceCharge: store.webServiceCharge,
-    bagCharge: store.bagCharge,
-    deliveryFee: store.deliveryFee,
+    webServiceCharge: 0,
+    bagCharge: 0,
+    deliveryFee: 0,
     logoUrl: store.tenant?.logoUrl || null,
     brandColor: store.brandColor || null,
     accentColor: store.accentColor || null,

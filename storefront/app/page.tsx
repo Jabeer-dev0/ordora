@@ -1,11 +1,15 @@
-import { prisma } from "@ordora/shared/lib/prisma"
-import Link from "next/link"
-import { Store } from "lucide-react"
+import Link from "next/link";
+import { Store } from "lucide-react";
+import { storefrontApi } from "@/lib/api";
 
-export const revalidate = 60
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const stores = await prisma.store.findMany({ where: { isActive: true }, orderBy: { name: "asc" } })
+  let stores: any[] = [];
+  try {
+    const d = await storefrontApi.listStores();
+    stores = d.stores || [];
+  } catch {}
 
   return (
     <div className="min-h-screen">
@@ -36,5 +40,5 @@ export default async function HomePage() {
         )}
       </main>
     </div>
-  )
+  );
 }

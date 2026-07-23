@@ -4,7 +4,6 @@ import { useState, useMemo, useRef, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { formatCurrency } from "@ordora/shared/lib/utils"
 import { createOnlineOrder } from "@/lib/actions/order"
 import { createCheckoutSession } from "@/lib/actions/payment"
 import {
@@ -170,7 +169,7 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
     try {
       if (paymentMethod === "CARD") {
         const result = await createCheckoutSession({
-          storeName: store.name, customerName, customerPhone,
+          storeSlug: store.slug, customerName, customerPhone,
           customerAddress: orderType === "DELIVERY" ? customerAddress : undefined,
           orderType, items: cart.map(c => ({
             name: c.name, quantity: c.quantity, unitPrice: c.basePrice,
@@ -219,7 +218,7 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
         <div className="max-w-[1600px] mx-auto px-5 sm:px-8">
           <div className="flex items-center justify-between h-[61px]">
             <a href={`/${store.slug}`} className="flex-shrink-0">
-              <img src={logoUrl || "/brands/chesters/chesters-logo.png"} alt={storeName} className="h-10 w-auto object-contain" />
+              <img src={logoUrl || "https://pub-31a5979cb6eca0d06a2ee0cb849292d5.r2.dev/ordora/chesters/chesters-logo.png"} alt={storeName} className="h-10 w-auto object-contain" />
             </a>
 
             <nav className="hidden md:flex items-center gap-7">
@@ -257,7 +256,7 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
       {/* Hero */}
       <section className="relative w-full overflow-hidden" style={{ backgroundColor: "var(--theme-ink, #141414)", height: "180px" }}>
         <img
-          src="/brands/chesters/chesters-hero.jpg"
+          src="https://pub-31a5979cb6eca0d06a2ee0cb849292d5.r2.dev/ordora/chesters/chesters-hero.jpg"
           alt={storeName}
           className="w-full h-full object-cover"
         />
@@ -704,7 +703,7 @@ export default function MenuClient({ store, menuItems, categories, modifierGroup
         <div className="max-w-[1600px] mx-auto px-6 py-12">
           <div className="flex flex-col lg:flex-row lg:items-start gap-10 lg:gap-16 mb-10">
             <div className="lg:w-[1.4fr] shrink-0">
-              <img src={logoUrl || "/brands/chesters/chesters-logo.png"} alt={storeName} className="h-14 w-auto object-contain mb-3" />
+              <img src={logoUrl || "https://pub-31a5979cb6eca0d06a2ee0cb849292d5.r2.dev/ordora/chesters/chesters-logo.png"} alt={storeName} className="h-14 w-auto object-contain mb-3" />
               <p className="text-sm text-white/40">Order online for collection or delivery</p>
             </div>
             <div className="flex flex-1 flex-wrap justify-between gap-10 sm:gap-16">

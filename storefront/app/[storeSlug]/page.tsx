@@ -1,13 +1,16 @@
-import { prisma } from "@ordora/shared/lib/prisma"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Phone, MapPin, Navigation, Star } from "lucide-react"
 import { getStoreBySlug } from "@/lib/store"
 import { getStoreOpenStatus } from "@/lib/hours"
+import { storefrontApi } from "@/lib/api"
 
 export const revalidate = 60
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+const FALLBACK_LOGO = "https://pub-31a5979cb6eca0d06a2ee0cb849292d5.r2.dev/ordora/chesters/chesters-logo.png"
+const FALLBACK_HERO = "https://pub-31a5979cb6eca0d06a2ee0cb849292d5.r2.dev/ordora/chesters/chesters-hero.jpg"
 
 function StarDivider({ className = "" }: { className?: string }) {
   return (
@@ -27,17 +30,23 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
     store = await getStoreBySlug(storeSlug)
     if (!store || !store.isActive) notFound()
 
-    ;[banners, openingHours, menuItems] = await Promise.all([
-      prisma.banner.findMany({ where: { storeId: store.id, isActive: true }, orderBy: { sortOrder: "asc" } }),
-      prisma.storeOpeningHour.findMany({ where: { storeId: store.id }, orderBy: { day: "asc" } }),
-      prisma.menuItem.findMany({ where: { storeId: store.id, isAvailable: true, soldOut: false, isFeatured: true }, take: 8, orderBy: { sortOrder: "asc" } }),
+    const [b, h, m] = await Promise.all([
+      storefrontApi.banners(storeSlug),
+      storefrontApi.openingHours(storeSlug),
+      storefrontApi.menu(storeSlug),
     ])
+    banners = b.banners || []
+    openingHours = h.openingHours || []
+    // Flatten featured items across categories
+    menuItems = (m.categories || []).flatMap((c: any) => c.items)
+      .filter((i: any) => i.isFeatured)
+      .slice(0, 8)
   } catch {
     notFound()
   }
 
   const hours = getStoreOpenStatus({ acceptingOrders: store!.acceptingOrders, closedUntil: store!.closedUntil }, openingHours as any)
-  const logoUrl = store!.tenant?.logoUrl || null
+  const logoUrl = store!.tenant?.logoUrl || FALLBACK_LOGO
   const storeName = store!.name
   const storeAddress = store!.address ? `${store!.address}${store!.postcode ? `, ${store!.postcode}` : ""}` : ""
 
@@ -50,7 +59,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
         <div className="max-w-[1600px] mx-auto px-5 sm:px-8">
           <div className="flex items-center justify-between h-[61px]">
             <Link href={`/${storeSlug}`} className="flex-shrink-0">
-              <img src={logoUrl || "/brands/chesters/chesters-logo.png"} alt={storeName} className="h-10 w-auto object-contain" />
+              <img src={logoUrl} alt={storeName} className="h-10 w-auto object-contain" />
             </Link>
 
             <nav className="hidden md:flex items-center gap-7">
@@ -85,7 +94,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
         {/* ── Hero ── */}
         <section className="relative w-full overflow-hidden" style={{ backgroundColor: "var(--theme-ink)", minHeight: "26rem", height: "52vh" }}>
           <img
-            src={store!.heroImageUrl || "/brands/chesters/chesters-hero.jpg"}
+            src={store!.heroImageUrl || FALLBACK_HERO}
             alt={storeName}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -142,7 +151,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                 <h2 className="font-display text-3xl sm:text-5xl uppercase tracking-tight mt-1" style={{ color: "var(--theme-ink)" }}>Today&apos;s Heat</h2>
               </div>
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2" data-scroll="onDark">
-                {menuItems.map((item, i) => (
+                {menuItems.map((item: any, i: number) => (
                   <Link
                     key={item.id}
                     href={`/${storeSlug}/menu`}
@@ -157,13 +166,11 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                           <span className="text-5xl text-white font-display">{item.name.charAt(0)}</span>
                         </div>
                       )}
-                      {/* Rank badge */}
                       <div className="absolute top-0 left-0 flex items-center justify-center text-white text-xs font-extrabold" style={{ height: "34px", padding: "0 14px", background: "var(--brand)", borderRadius: "0 0 12px 0" }}>
                         #{i + 1} today
                       </div>
-                      {/* Price pill */}
                       <div className="absolute top-3 right-3 flex items-center justify-center font-extrabold text-sm" style={{ borderRadius: "999px", padding: "7px 15px", backgroundColor: "var(--theme-ink)", color: "var(--theme-ink-foreground)", boxShadow: "0 2px 8px rgba(0,0,0,0.35)" }}>
-                        £{item.price.toFixed(2)}
+                        £{Number(item.price).toFixed(2)}
                       </div>
                     </div>
                     <div className="py-3 px-1">
@@ -182,20 +189,18 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
         <section className="relative py-16 sm:py-20 overflow-hidden">
           <div className="absolute inset-0">
             <img
-              src="/brands/chesters/chesters-hero.jpg"
+              src={FALLBACK_HERO}
               alt=""
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0" style={{ backgroundColor: "rgb(10 10 10 / 0.82)" }} />
           </div>
           <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8">
-            {/* Section header above the picture/map */}
             <div className="mb-7">
               <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--brand)" }}>Find us</span>
               <h2 className="font-display text-3xl sm:text-5xl uppercase tracking-tight mt-1" style={{ color: "var(--theme-ink-foreground)" }}>Visit {storeName}</h2>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-10 items-start">
-              {/* Map */}
               <div className="overflow-hidden shadow-lg h-[360px] order-2 lg:order-1" style={{ borderRadius: "var(--radius-card)" }}>
                 {store!.address ? (
                   <iframe
@@ -211,9 +216,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                 )}
               </div>
 
-              {/* Info Panel */}
               <div className="overflow-hidden order-1 lg:order-2" style={{ backgroundColor: "white", borderRadius: "var(--radius-card)", boxShadow: "var(--card-shadow, var(--shadow-card))" }}>
-                {/* Open status */}
                 <div className="px-6 pt-6 pb-4">
                   <div>
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${hours.isOpen ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
@@ -223,7 +226,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                   </div>
                 </div>
 
-                {/* Info rows */}
                 <div className="space-y-0" style={{ borderTop: "1px solid var(--line, #e3d8c8)" }}>
                   {storeAddress && (
                     <div className="flex items-start gap-3 px-6 py-4" style={{ borderBottom: "1px solid var(--line, #e3d8c8)" }}>
@@ -251,7 +253,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                     </div>
                   )}
 
-                  {/* Opening Hours */}
                   <div className="px-6 py-4">
                     <h3 className="font-display text-base font-bold mb-2" style={{ color: "var(--theme-ink)" }}>Opening hours</h3>
                     <div className="space-y-1">
@@ -261,7 +262,7 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
                         return (
                           <div key={day} className={`flex items-center justify-between text-sm py-1 ${isToday ? "font-bold" : "text-gray-500"}`} style={isToday ? { color: "var(--theme-ink)" } : undefined}>
                             <span>{day}{isToday ? " · today" : ""}</span>
-                            <span>{h?.isActive ? `${h.open}\u2013${h.close}` : "Closed"}</span>
+                            <span>{h?.isActive ? `${h.open}–${h.close}` : "Closed"}</span>
                           </div>
                         )
                       })}
@@ -276,19 +277,15 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
 
       {/* ── Footer ── */}
       <footer style={{ backgroundColor: "var(--theme-ink)" }}>
-        {/* Gradient top bar */}
         <div className="h-1" style={{ background: "linear-gradient(90deg, var(--brand), var(--gold, #b8862f), var(--accent))" }} />
 
         <div className="max-w-[1600px] mx-auto px-6 py-12">
-          {/* Logo + columns in one row */}
           <div className="flex flex-col lg:flex-row lg:items-start gap-10 lg:gap-16 mb-10">
-            {/* Logo + tagline */}
             <div className="lg:w-[1.4fr] shrink-0">
-              <img src={logoUrl || "/brands/chesters/chesters-logo.png"} alt={storeName} className="h-14 w-auto object-contain mb-3" />
+              <img src={logoUrl} alt={storeName} className="h-14 w-auto object-contain mb-3" />
               <p className="text-sm text-white/40">Order online for collection or delivery</p>
             </div>
 
-            {/* 3 columns in a row */}
             <div className="flex flex-1 flex-wrap justify-between gap-10 sm:gap-16">
               <div>
                 <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white/50 mb-4">Explore</h3>
@@ -327,7 +324,6 @@ export default async function StorePage({ params }: { params: Promise<{ storeSlu
             </div>
           </div>
 
-          {/* Bottom bar */}
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.25rem" }}>
             <p className="text-xs text-white/30">&copy; {new Date().getFullYear()} {storeName}. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs text-white/30">

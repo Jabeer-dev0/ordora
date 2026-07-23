@@ -31,23 +31,39 @@ export function getStoreOpenStatus(
   const now = new Date()
   const dayIndex = now.getDay()
   const filtered = orderType ? hours.filter(h => h.orderType === orderType) : hours
-  const today = filtered.find(h => h.day === dayIndex && h.isActive)
+  const current = now.getHours() * 60 + now.getMinutes()
 
-  if (!today) {
-    return { isOpen: false, text: "Closed today", until: "" }
+  // Check today's hours (handles wrap past midnight) and yesterday's hours
+  // that extend into the early hours of today.
+  const candidates: { open: string; close: string }[] = []
+  const today = filtered.find(h => h.day === dayIndex && h.isActive)
+  if (today) candidates.push({ open: today.open, close: today.close })
+  const yesterday = filtered.find(h => h.day === (dayIndex + 6) % 7 && h.isActive)
+  if (yesterday) candidates.push({ open: yesterday.open, close: yesterday.close })
+
+  for (const h of candidates) {
+    const [oh, om] = h.open.split(":").map(Number)
+    const [ch, cm] = h.close.split(":").map(Number)
+    const openTime = oh * 60 + om
+    const closeTime = ch * 60 + cm
+
+    if (closeTime <= openTime) {
+      // Wraps past midnight: open today, closes tomorrow.
+      if (current >= openTime || current < closeTime) {
+        return { isOpen: true, text: "Open now", until: `until ${h.close}` }
+      }
+    } else {
+      if (current >= openTime && current < closeTime) {
+        return { isOpen: true, text: "Open now", until: `until ${h.close}` }
+      }
+    }
   }
 
-  const [oh, om] = today.open.split(":").map(Number)
-  const [ch, cm] = today.close.split(":").map(Number)
-  const current = now.getHours() * 60 + now.getMinutes()
-  const openTime = oh * 60 + om
-  const closeTime = ch * 60 + cm
-  const isOpen = current >= openTime && current < closeTime
-
+  const base = today || yesterday
   return {
-    isOpen,
-    text: isOpen ? "Open now" : "Closed",
-    until: isOpen ? `until ${today.close}` : "",
+    isOpen: false,
+    text: base ? "Closed" : "Closed today",
+    until: "",
   }
 }
 
